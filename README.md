@@ -1,19 +1,29 @@
 # voice-ai-patient-intake
 
-A small FastAPI backend for patient registration/intake, backed by SQLite.
-It exposes a five-endpoint REST API for creating, listing, retrieving,
-partially updating, and soft-deleting patient demographic records, with
-server-side validation on all patient-supplied fields.
+A FastAPI backend for patient registration/intake, paired with a Vapi voice
+agent ("Mira") that registers patients over a phone call. It exposes a
+five-endpoint REST API for creating, listing, retrieving, partially
+updating, and soft-deleting patient demographic records, with server-side
+validation on all patient-supplied fields. The deployed instance runs on
+Railway against a PostgreSQL database; the same code runs locally against
+SQLite with zero configuration.
+
+## Live demo
+
+- API base URL: https://voice-ai-patient-intake-production-e7f4.up.railway.app
+- Call the voice agent: **+1 732 782 5565**
 
 ## Tech stack
 
 | Concern         | Choice                | Why |
 |------------------|------------------------|-----|
-| Web framework    | FastAPI                | Async-capable, generates OpenAPI/Swagger docs for free, and Pydantic integration gives request validation and serialization with minimal boilerplate — a good fit for a small, well-typed CRUD API. |
+| Backend framework | FastAPI               | Fast to build, gives automatic request validation and OpenAPI/Swagger docs for free, and Pydantic integration keeps validation and serialization out of the route handlers — a good fit for a small, well-typed CRUD API. |
 | Data validation  | Pydantic v2            | Declarative field constraints + custom validators map directly onto the intake rules (name characters, phone format, state codes, ZIP format, non-future DOB) and produce structured error output. |
-| ORM              | SQLAlchemy 2.0         | Keeps SQL out of the route handlers, and the same model definitions work if the project later moves off SQLite (e.g. to Postgres) with only a `DATABASE_URL` change. |
-| Database         | SQLite                 | Zero-setup, file-based, sufficient for a single-service intake backend or local/dev use, as requested. Not a concurrency-heavy production choice — see Known Limitations. |
+| ORM              | SQLAlchemy 2.0         | Keeps SQL out of the route handlers, and the same model definitions work across SQLite (local dev) and PostgreSQL (deployed) with only a `DATABASE_URL` change. |
+| Database         | PostgreSQL on Railway (deployed), SQLite (local) | Postgres gives the deployed app persistent, hosted storage that survives restarts and redeploys, which a container-local SQLite file would not. SQLite remains the zero-setup default for local development — see Architecture. |
 | Server           | Uvicorn                | Standard ASGI server for FastAPI. |
+| Voice layer      | Vapi                   | Abstracts telephony, speech-to-text, and text-to-speech behind one API/dashboard, so the voice agent only needs a system prompt and a tool definition rather than a custom telephony/STT/TTS stack. |
+| LLM              | Groq — Llama 3.3 70B   | Groq's inference is fast and low-latency, which matters for a real-time voice conversation where the caller is waiting on each turn. |
 | Config           | `python-dotenv` + env vars | No hardcoded secrets or paths; `.env` is gitignored, `.env.example` documents every variable. |
 
 ## Project structure
@@ -35,8 +45,17 @@ requirements.txt
 
 ### Architecture
 
-Request flow: `router -> Pydantic schema (validation) -> crud.py (SQLAlchemy) -> SQLite`.
+Request flow: `router -> Pydantic schema (validation) -> crud.py (SQLAlchemy) -> database`.
 
+- **Deployed on Railway, backed by PostgreSQL.** The FastAPI backend runs as
+  a Railway service; persistence is a Railway-managed PostgreSQL database.
+  `app/database.py` reads the connection string from the `DATABASE_URL`
+  environment variable (which Railway's Postgres plugin injects
+  automatically) and falls back to a local SQLite file
+  (`sqlite:///./patient_intake.db`) when `DATABASE_URL` is unset, so the
+  same code runs against Postgres in production and SQLite locally with no
+  code changes. It also rewrites a legacy `postgres://` URL scheme to
+  `postgresql://`, which SQLAlchemy 2.0 requires.
 - **Validation lives in one place.** `app/validators.py` holds the regex/logic
   for names, phone numbers, state codes, ZIP codes, and date-of-birth
   plausibility. `app/schemas.py` wires these into `PatientCreate` (all
@@ -91,6 +110,22 @@ needs to register and bill a patient. Email, insurance (self-pay patients
 have none), preferred language, and emergency contact are commonly collected
 but not blocking, so they're optional.
 
+## Voice agent
+
+The Vapi voice agent, Mira, handles patient registration by phone: it
+greets the caller, collects the required demographics conversationally
+(one or two fields at a time, reading back phone numbers, ZIP codes, and
+dates to confirm), then offers the optional fields (email, insurance,
+preferred language, emergency contact) as a group and only collects what
+the caller opts into. Before saving, it reads back everything it collected
+and asks the caller to confirm. Only after explicit confirmation does it
+call the `save_patient` tool, which sends a `POST /patients` request to
+this backend with the collected fields. On success it confirms registration
+to the caller and ends the call; on failure it apologizes and tells the
+caller to try again shortly, without claiming success.
+
+The full system prompt is in [`voice/prompt.md`](voice/prompt.md).
+
 ## Setup
 
 Requires Python 3.10+.
@@ -110,8 +145,15 @@ uvicorn app.main:app --reload
 The API is now at `http://127.0.0.1:8000`, interactive docs at
 `http://127.0.0.1:8000/docs`, and a health check at `/health`.
 
-Environment variables (see `.env.example`): `DATABASE_URL` (SQLAlchemy URL,
-defaults to a local SQLite file), `APP_ENV`, `LOG_LEVEL`, `HOST`, `PORT`.
+Environment variables (see `.env.example`):
+
+- `DATABASE_URL` — **required in production.** SQLAlchemy connection string.
+  On Railway this is provided automatically by the attached Postgres
+  service; locally it's optional and defaults to a local SQLite file
+  (`sqlite:///./patient_intake.db`) when unset.
+- `APP_ENV`, `LOG_LEVEL`, `HOST`, `PORT` — optional, all have sane defaults
+  for local development.
+
 No secrets are required to run this service locally.
 
 ## API
@@ -167,10 +209,11 @@ from the database. → `200` with the now-deleted patient record, or `404`.
   In a real deployment, logs containing PHI need access controls, redaction
   of sensitive fields, and a retention policy — don't ship these logs to an
   unrestricted log aggregator as-is.
-- **SQLite concurrency.** SQLite serializes writes at the file level, which
-  is fine for a single-process dev/demo service but not for concurrent
-  multi-writer production traffic. Swapping `DATABASE_URL` to Postgres/MySQL
-  is the intended upgrade path; the SQLAlchemy models don't need to change.
+- **SQLite concurrency (local dev only).** The deployed instance uses
+  PostgreSQL, not SQLite, so this doesn't affect production. SQLite is only
+  used as the local-dev fallback, and it serializes writes at the file
+  level — fine for single-process local use, not for concurrent multi-writer
+  traffic.
 - **No schema migrations.** Tables are created with
   `Base.metadata.create_all()` on startup, which is fine for SQLite/dev but
   won't safely evolve a production schema. Add Alembic before making
@@ -182,3 +225,11 @@ from the database. → `200` with the now-deleted patient record, or `404`.
   typo or partial name won't find a record.
 - **No pagination** on `GET /patients` — fine for a small demo dataset, but
   needed before this scales to a large patient population.
+- **Railway free-trial hosting.** The deployed instance runs on Railway's
+  free trial, which is subject to a 30-day/usage-credit limit — the live
+  demo URL and phone number may stop working once that's exhausted.
+- **Vapi free number is inbound-only.** The demo phone number can be called
+  to reach Mira, but the free Vapi number can't place outbound calls.
+- **`date_of_birth` accepted in `MM/DD/YYYY`** (with `YYYY-MM-DD` also
+  accepted for backward compatibility) — see Data model above; API
+  consumers expecting ISO-only input should account for this.
