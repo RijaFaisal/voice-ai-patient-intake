@@ -6,7 +6,7 @@ the Pydantic request/response models and the plain query-parameter
 filters used in GET /patients.
 """
 import re
-from datetime import date
+from datetime import date, datetime
 
 NAME_RE = re.compile(r"^[A-Za-zÀ-ſ](?:[A-Za-zÀ-ſ'\-. ]*[A-Za-zÀ-ſ.])?$")
 
@@ -15,6 +15,11 @@ NAME_RE = re.compile(r"^[A-Za-zÀ-ſ](?:[A-Za-zÀ-ſ'\-. ]*[A-Za-zÀ-ſ.])?$")
 PHONE_RE = re.compile(r"^\+?1?[\s.\-]?\(?(\d{3})\)?[\s.\-]?(\d{3})[\s.\-]?(\d{4})$")
 
 ZIP_RE = re.compile(r"^\d{5}(-\d{4})?$")
+
+# Primary format per spec: MM/DD/YYYY (e.g. 04/12/1988).
+# ISO YYYY-MM-DD is also accepted for backward compatibility.
+MM_DD_YYYY_RE = re.compile(r"^\d{1,2}/\d{1,2}/\d{4}$")
+ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 US_STATES = {
     "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
@@ -75,3 +80,40 @@ def validate_dob(value: date) -> date:
     if value < min_date:
         raise ValueError("Date of birth is not plausible.")
     return value
+
+
+def parse_date_of_birth(value) -> date:
+    """
+    Accepts MM/DD/YYYY (primary, per spec) or ISO YYYY-MM-DD (backward
+    compatibility), or an already-parsed date/datetime. Rejects anything
+    else. Applies validate_dob() to the result before returning.
+    """
+    if isinstance(value, datetime):
+        parsed = value.date()
+    elif isinstance(value, date):
+        parsed = value
+    elif isinstance(value, str):
+        text = value.strip()
+        parsed = None
+
+        if MM_DD_YYYY_RE.match(text):
+            try:
+                parsed = datetime.strptime(text, "%m/%d/%Y").date()
+            except ValueError:
+                parsed = None
+
+        if parsed is None and ISO_DATE_RE.match(text):
+            try:
+                parsed = datetime.strptime(text, "%Y-%m-%d").date()
+            except ValueError:
+                parsed = None
+
+        if parsed is None:
+            raise ValueError(
+                "Date of birth must be in MM/DD/YYYY format (e.g. 04/12/1988); "
+                "YYYY-MM-DD (e.g. 1988-04-12) is also accepted."
+            )
+    else:
+        raise ValueError("Date of birth must be a date string in MM/DD/YYYY format.")
+
+    return validate_dob(parsed)

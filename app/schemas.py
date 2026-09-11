@@ -10,7 +10,14 @@ from .models import Sex
 class PatientBase(BaseModel):
     first_name: str = Field(..., max_length=50)
     last_name: str = Field(..., max_length=50)
-    date_of_birth: date
+    date_of_birth: date = Field(
+        ...,
+        description=(
+            "Date of birth in MM/DD/YYYY format (e.g. 04/12/1988). "
+            "YYYY-MM-DD is also accepted for backward compatibility."
+        ),
+        examples=["04/12/1988"],
+    )
     sex: Sex
     phone_number: str
     address_line_1: str = Field(..., min_length=1, max_length=255)
@@ -43,10 +50,10 @@ class PatientBase(BaseModel):
             return None
         return v.validate_name(val, "Emergency contact name")
 
-    @field_validator("date_of_birth")
+    @field_validator("date_of_birth", mode="before")
     @classmethod
-    def _date_of_birth(cls, val: date) -> date:
-        return v.validate_dob(val)
+    def _date_of_birth(cls, val):
+        return v.parse_date_of_birth(val)
 
     @field_validator("phone_number")
     @classmethod
@@ -102,7 +109,14 @@ class PatientUpdate(BaseModel):
 
     first_name: Optional[str] = Field(None, max_length=50)
     last_name: Optional[str] = Field(None, max_length=50)
-    date_of_birth: Optional[date] = None
+    date_of_birth: Optional[date] = Field(
+        None,
+        description=(
+            "Date of birth in MM/DD/YYYY format (e.g. 04/12/1988). "
+            "YYYY-MM-DD is also accepted for backward compatibility."
+        ),
+        examples=["04/12/1988"],
+    )
     sex: Optional[Sex] = None
     phone_number: Optional[str] = None
     address_line_1: Optional[str] = Field(None, min_length=1, max_length=255)
@@ -135,10 +149,10 @@ class PatientUpdate(BaseModel):
             return None
         return v.validate_name(val, "Emergency contact name")
 
-    @field_validator("date_of_birth")
+    @field_validator("date_of_birth", mode="before")
     @classmethod
     def _date_of_birth(cls, val):
-        return val if val is None else v.validate_dob(val)
+        return None if val is None else v.parse_date_of_birth(val)
 
     @field_validator("phone_number")
     @classmethod

@@ -67,7 +67,7 @@ Request flow: `router -> Pydantic schema (validation) -> crud.py (SQLAlchemy) ->
 | `patient_id` | auto | UUID v4, primary key, server-generated |
 | `first_name` | **yes** | letters/space/hyphen/apostrophe/period, 1–50 chars |
 | `last_name` | **yes** | same rules as `first_name` |
-| `date_of_birth` | **yes** | ISO date, cannot be in the future, must be ≤150 years ago |
+| `date_of_birth` | **yes** | accepted input format is `MM/DD/YYYY` (e.g. `04/12/1988`); `YYYY-MM-DD` is also accepted for backward compatibility. Cannot be in the future, must be ≤150 years ago. Stored internally as a proper `DATE` column and returned in responses as ISO `YYYY-MM-DD`. |
 | `sex` | **yes** | enum: `Male`, `Female`, `Other`, `Decline to Answer` |
 | `phone_number` | **yes** | any common US format accepted, normalized/stored as 10 digits |
 | `address_line_1` | **yes** | |
@@ -139,7 +139,7 @@ curl -X POST http://127.0.0.1:8000/patients \
   -H "Content-Type: application/json" \
   -d '{
     "first_name": "Ana", "last_name": "Lee",
-    "date_of_birth": "1990-01-15", "sex": "Female",
+    "date_of_birth": "01/15/1990", "sex": "Female",
     "phone_number": "212-555-0100",
     "address_line_1": "1 Main St", "city": "New York",
     "state": "NY", "zip_code": "10001"
