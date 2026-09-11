@@ -36,11 +36,7 @@ def list_patients(
     return {"data": [_serialize(r) for r in records], "error": None}
 
 
-@router.get("/lookup", status_code=status.HTTP_200_OK)
-def lookup_patient(
-    phone_number: str = Query(..., description="Phone number to look up, any common US format"),
-    db: Session = Depends(get_db),
-):
+def _lookup_by_phone(phone_number: str, db: Session) -> dict:
     try:
         normalized_phone = validators.validate_phone(phone_number, "phone_number")
     except ValueError as exc:
@@ -48,6 +44,19 @@ def lookup_patient(
 
     record = crud.get_patient_by_phone(db, normalized_phone)
     return {"data": _serialize(record) if record else None, "error": None}
+
+
+@router.get("/lookup", status_code=status.HTTP_200_OK)
+def lookup_patient(
+    phone_number: str = Query(..., description="Phone number to look up, any common US format"),
+    db: Session = Depends(get_db),
+):
+    return _lookup_by_phone(phone_number, db)
+
+
+@router.get("/lookup/{phone_number}", status_code=status.HTTP_200_OK)
+def lookup_patient_by_path(phone_number: str, db: Session = Depends(get_db)):
+    return _lookup_by_phone(phone_number, db)
 
 
 @router.get("/{patient_id}", status_code=status.HTTP_200_OK)
