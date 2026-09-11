@@ -43,7 +43,11 @@ app/
     call_transcripts.py  The /call-transcripts endpoints
     vapi.py              The Vapi end-of-call-report webhook
 seed.py                 Inserts 1-2 sample patient records
+tests/
+  conftest.py          Test-DB override + shared fixtures (client, patient_payload)
+  test_patients.py      Integration tests for the /patients endpoints
 requirements.txt
+requirements-dev.txt    Adds pytest + httpx for running the test suite
 .env.example
 ```
 
@@ -218,6 +222,20 @@ Environment variables (see `.env.example`):
   for local development.
 
 No secrets are required to run this service locally.
+
+## Running tests
+
+Integration tests for the `/patients` endpoints live in `tests/`, using
+pytest and FastAPI's `TestClient`. They run against a private, temp-file
+SQLite database created fresh for the test session — `tests/conftest.py`
+overrides `DATABASE_URL` before the app is imported, so tests never touch
+production Postgres or a developer's local SQLite file, and each test gets
+a clean schema.
+
+```bash
+pip install -r requirements-dev.txt   # adds pytest + httpx on top of requirements.txt
+pytest
+```
 
 ## API
 
