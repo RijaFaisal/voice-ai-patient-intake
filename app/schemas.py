@@ -29,9 +29,23 @@ class PatientBase(BaseModel):
     address_line_2: Optional[str] = Field(None, max_length=255)
     insurance_provider: Optional[str] = Field(None, max_length=100)
     insurance_member_id: Optional[str] = Field(None, max_length=50)
-    preferred_language: str = Field(default="English", max_length=50)
+    preferred_language: Optional[str] = Field(default="English", max_length=50)
     emergency_contact_name: Optional[str] = Field(None, max_length=100)
     emergency_contact_phone: Optional[str] = None
+
+    @field_validator(
+        "email",
+        "address_line_2",
+        "insurance_provider",
+        "insurance_member_id",
+        "preferred_language",
+        "emergency_contact_name",
+        "emergency_contact_phone",
+        mode="before",
+    )
+    @classmethod
+    def _empty_optional_to_none(cls, val):
+        return v.empty_str_to_none(val)
 
     @field_validator("first_name")
     @classmethod
@@ -131,6 +145,20 @@ class PatientUpdate(BaseModel):
     preferred_language: Optional[str] = Field(None, max_length=50)
     emergency_contact_name: Optional[str] = Field(None, max_length=100)
     emergency_contact_phone: Optional[str] = None
+
+    @field_validator(
+        "email",
+        "address_line_2",
+        "insurance_provider",
+        "insurance_member_id",
+        "preferred_language",
+        "emergency_contact_name",
+        "emergency_contact_phone",
+        mode="before",
+    )
+    @classmethod
+    def _empty_optional_to_none(cls, val):
+        return v.empty_str_to_none(val)
 
     @field_validator("first_name")
     @classmethod

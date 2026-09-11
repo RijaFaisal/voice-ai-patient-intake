@@ -33,6 +33,13 @@ US_STATES = {
 MIN_BIRTH_YEAR_SPAN = 150  # generous upper bound on plausible patient age
 
 
+def empty_str_to_none(value):
+    """Treat an empty or whitespace-only string as 'not provided'."""
+    if isinstance(value, str) and not value.strip():
+        return None
+    return value
+
+
 def validate_name(value: str, field_name: str = "Name") -> str:
     value = (value or "").strip()
     if not (1 <= len(value) <= 50):
