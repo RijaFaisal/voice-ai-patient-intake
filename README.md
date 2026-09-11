@@ -191,6 +191,20 @@ this backend with the collected fields. On success it confirms registration
 to the caller and ends the call; on failure it apologizes and tells the
 caller to try again shortly, without claiming success.
 
+- **Spanish support.** Mira operates in English by default; if the caller
+  speaks Spanish or says something like "Hablo español," she switches to
+  Spanish for the rest of the call — field prompts, confirmations, and the
+  closing all follow in Spanish. The Vapi transcriber is configured for
+  English and Spanish auto-detection so caller speech is transcribed
+  correctly in either language.
+- **Duplicate detection.** As soon as the caller's phone number is collected
+  and confirmed, Mira looks it up. If a matching patient record already
+  exists, she recognizes the returning caller and offers to update their
+  existing information instead of creating a duplicate record.
+- **Appointment scheduling.** After a successful registration, Mira offers
+  to schedule the caller's first appointment. If the caller accepts, she
+  books it via the appointment tool using the newly created patient's ID.
+
 The full system prompt is in [`voice/prompt.md`](voice/prompt.md).
 
 ## Setup
