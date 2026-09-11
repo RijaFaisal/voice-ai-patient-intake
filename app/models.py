@@ -4,7 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, Date, DateTime, ForeignKey
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import String
+from sqlalchemy import String, Text
 
 from .database import Base
 
@@ -70,3 +70,18 @@ class Appointment(Base):
     # System-managed
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
+
+
+class CallTranscript(Base):
+    """Stored transcript of a completed voice call, optionally linked to a patient."""
+
+    __tablename__ = "call_transcripts"
+
+    transcript_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    patient_id = Column(String(36), ForeignKey("patients.patient_id"), nullable=True)
+    phone_number = Column(String(20), nullable=True)
+    transcript = Column(Text, nullable=False)
+    summary = Column(Text, nullable=True)
+
+    # System-managed
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

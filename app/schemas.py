@@ -281,6 +281,51 @@ class AppointmentOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CallTranscriptCreate(BaseModel):
+    transcript: str = Field(..., min_length=1)
+    summary: Optional[str] = None
+    phone_number: Optional[str] = None
+
+    @field_validator("summary", "phone_number", mode="before")
+    @classmethod
+    def _empty_optional_to_none(cls, val):
+        return v.empty_str_to_none(val)
+
+    @field_validator("transcript")
+    @classmethod
+    def _transcript(cls, val: str) -> str:
+        val = (val or "").strip()
+        if not val:
+            raise ValueError("Transcript is required and cannot be blank.")
+        return val
+
+    @field_validator("summary")
+    @classmethod
+    def _summary(cls, val: Optional[str]) -> Optional[str]:
+        if val is None:
+            return None
+        val = val.strip()
+        return val or None
+
+    @field_validator("phone_number")
+    @classmethod
+    def _phone_number(cls, val: Optional[str]) -> Optional[str]:
+        if val is None:
+            return None
+        return v.validate_phone(val, "Phone number")
+
+
+class CallTranscriptOut(BaseModel):
+    transcript_id: str
+    patient_id: Optional[str] = None
+    phone_number: Optional[str] = None
+    transcript: str
+    summary: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ErrorDetail(BaseModel):
     code: str
     message: str

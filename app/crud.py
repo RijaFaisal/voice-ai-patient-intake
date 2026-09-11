@@ -87,3 +87,36 @@ def create_appointment(db: Session, appointment_in: schemas.AppointmentCreate) -
     db.commit()
     db.refresh(db_appointment)
     return db_appointment
+
+
+def list_call_transcripts(db: Session, patient_id: Optional[str] = None) -> List[models.CallTranscript]:
+    query = db.query(models.CallTranscript)
+    if patient_id:
+        query = query.filter(models.CallTranscript.patient_id == patient_id)
+    return query.order_by(models.CallTranscript.created_at.desc()).all()
+
+
+def record_call_transcript(
+    db: Session,
+    transcript: str,
+    summary: Optional[str] = None,
+    phone_number: Optional[str] = None,
+) -> models.CallTranscript:
+    """
+    Shared by POST /call-transcripts and the Vapi webhook: stores a call
+    transcript, auto-linking it to the matching active patient by
+    phone_number when one exists.
+    """
+    patient = get_patient_by_phone(db, phone_number) if phone_number else None
+
+    db_transcript = models.CallTranscript(
+        transcript=transcript,
+        summary=summary,
+        phone_number=phone_number,
+        patient_id=patient.patient_id if patient else None,
+        created_at=datetime.utcnow(),
+    )
+    db.add(db_transcript)
+    db.commit()
+    db.refresh(db_transcript)
+    return db_transcript

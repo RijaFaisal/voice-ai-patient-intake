@@ -33,13 +33,15 @@ configuration.
 app/
   main.py            FastAPI app, startup table creation, exception handlers (error envelope)
   database.py        SQLAlchemy engine/session, get_db() dependency
-  models.py           SQLAlchemy Patient + Appointment models, Sex enum
+  models.py           SQLAlchemy Patient, Appointment, CallTranscript models, Sex enum
   schemas.py          Pydantic request/response schemas + field validators
   validators.py        Reusable validation functions (name, phone, state, zip, DOB)
   crud.py              DB access functions (list/get/create/update/soft-delete)
   routers/
     patients.py        The /patients endpoints
     appointments.py     The /appointments endpoints
+    call_transcripts.py  The /call-transcripts endpoints
+    vapi.py              The Vapi end-of-call-report webhook
 seed.py                 Inserts 1-2 sample patient records
 requirements.txt
 .env.example
@@ -157,6 +159,19 @@ but not blocking, so they're optional.
 | `reason` | no | free text, up to 255 characters |
 | `created_at` | auto | set on insert |
 | `deleted_at` | auto | `null` unless soft-deleted |
+
+`CallTranscript` (table `call_transcripts`):
+
+| Field | Required | Notes |
+|---|---|---|
+| `transcript_id` | auto | UUID v4, primary key, server-generated |
+| `patient_id` | no | foreign key to `patients.patient_id`; auto-set by matching `phone_number` to an active patient, `null` if no match or no phone given |
+| `phone_number` | no | any common US format accepted and normalized like elsewhere; non-US/unrecognized numbers from the Vapi webhook are stored as-is (see Known limitations) |
+| `transcript` | **yes** | full call transcript text |
+| `summary` | no | call summary text, if available |
+| `created_at` | auto | set on insert |
+
+No soft-delete on this table — transcripts aren't user-editable or deletable through the API.
 
 ## Voice agent
 
@@ -282,8 +297,55 @@ curl -X POST http://127.0.0.1:8000/appointments \
   }'
 ```
 
+### `GET /call-transcripts`
+Lists all stored call transcripts, most recent first. Optional query
+filter: `patient_id`. → `200`, `data` is an array.
+
+### `POST /call-transcripts`
+Body: `transcript` (required), `summary` (optional), `phone_number`
+(optional). If `phone_number` is given, it's validated/normalized the same
+way as everywhere else, and `patient_id` is auto-set by looking up an
+active patient with that phone number (`null` if none matches). → `201`
+with the created record, or `422` on validation failure (missing
+transcript, malformed phone number).
+
+```bash
+curl -X POST http://127.0.0.1:8000/call-transcripts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transcript": "AI: Hello. Caller: Hi, I would like to confirm my appointment.",
+    "summary": "Caller confirmed their upcoming appointment.",
+    "phone_number": "415-555-0132"
+  }'
+```
+
+### `POST /vapi/webhook`
+Server-message webhook for Vapi. Point a Vapi assistant's server URL at
+this endpoint. Vapi posts every call event (status updates, transcript
+chunks, the end-of-call report, etc.) to the same URL, each wrapped as
+`{ "message": { "type": ..., ... } }`; this endpoint only acts on
+`type: "end-of-call-report"` and acknowledges (`200`, `data: null`) every
+other event type without storing anything.
+
+For an end-of-call report, it extracts the transcript (`message.transcript`
+or `message.artifact.transcript`), the summary (`message.summary` or
+`message.analysis.summary`), and the caller's number
+(`message.customer.number` or `message.call.customer.number`), then stores
+them via the same lookup-and-link logic as `POST /call-transcripts`. →
+`200` with the created record. `400` if no transcript is present in the
+report. A phone number that doesn't fit the US phone format (e.g. a
+non-US E.164 number) is stored as-is on the record without patient
+matching, rather than failing the whole webhook call.
+
 ## Known limitations
 
+- **No auth on the Vapi webhook.** `POST /vapi/webhook` accepts any request
+  matching the expected shape — there's no shared-secret or signature check
+  against the caller. Vapi supports a server-URL secret; add verification
+  of it before relying on this in a setting where the endpoint is
+  discoverable.
+- **No update/delete for call transcripts.** `POST` and `GET` are the only
+  endpoints — transcripts can't be edited or removed through the API.
 - **No update/cancel endpoint for appointments.** `POST` and the two `GET`s
   are the only appointment endpoints — there's no `PUT` to reschedule and no
   `DELETE` to cancel/soft-delete an appointment yet.

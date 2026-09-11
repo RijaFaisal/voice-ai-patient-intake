@@ -10,7 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .database import Base, engine
-from .routers import appointments, patients
+from .routers import appointments, call_transcripts, patients, vapi
 
 load_dotenv()
 
@@ -34,6 +34,8 @@ app = FastAPI(
 
 app.include_router(patients.router)
 app.include_router(appointments.router)
+app.include_router(call_transcripts.router)
+app.include_router(vapi.router)
 
 _STATUS_CODES = {
     400: "BAD_REQUEST",
