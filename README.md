@@ -45,17 +45,52 @@ requirements.txt
 
 ### Architecture
 
-Request flow: `router -> Pydantic schema (validation) -> crud.py (SQLAlchemy) -> database`.
+The system is four distinct layers. Each is independently swappable — the
+API doesn't know it's being called by a phone call rather than curl, and
+the voice agent doesn't know or care whether the API is backed by Postgres
+or SQLite:
 
-- **Deployed on Railway, backed by PostgreSQL.** The FastAPI backend runs as
-  a Railway service; persistence is a Railway-managed PostgreSQL database.
-  `app/database.py` reads the connection string from the `DATABASE_URL`
-  environment variable (which Railway's Postgres plugin injects
-  automatically) and falls back to a local SQLite file
-  (`sqlite:///./patient_intake.db`) when `DATABASE_URL` is unset, so the
-  same code runs against Postgres in production and SQLite locally with no
-  code changes. It also rewrites a legacy `postgres://` URL scheme to
-  `postgresql://`, which SQLAlchemy 2.0 requires.
+```
+Caller (phone)
+   │
+   ▼
+1. Telephony / STT / TTS  —  Vapi
+   │  (text turns only, in and out)
+   ▼
+2. LLM / conversation  —  Groq (Llama 3.3 70B), driven by voice/prompt.md
+   │  (calls the save_patient tool once the caller confirms)
+   ▼
+3. API  —  this FastAPI backend (this repo)
+   │  router -> Pydantic schema (validation) -> crud.py (SQLAlchemy)
+   ▼
+4. Database  —  PostgreSQL on Railway (deployed) / SQLite (local)
+```
+
+1. **Telephony layer — Vapi.** Vapi answers the call and handles speech-to-
+   text and text-to-speech, so the LLM layer only ever deals in text turns.
+   There's no custom telephony/STT/TTS code in this repo.
+2. **LLM layer — Groq, Llama 3.3 70B.** The conversation is driven entirely
+   by the system prompt in [`voice/prompt.md`](voice/prompt.md) — it
+   defines what Mira collects, how she validates and confirms, and that she
+   must call the `save_patient` tool once the caller confirms. This layer
+   is config (the prompt + the Vapi tool definition pointed at this API),
+   not code in this repo.
+3. **API layer — this FastAPI backend.** Vapi's `save_patient` tool call
+   reaches this service as `POST /patients`, going through the same
+   request flow as any other client: `router -> Pydantic schema
+   (validation) -> crud.py (SQLAlchemy) -> database`.
+4. **Database layer — PostgreSQL on Railway, SQLite locally.** The FastAPI
+   backend runs as a Railway service; persistence is a Railway-managed
+   PostgreSQL database. `app/database.py` reads the connection string from
+   the `DATABASE_URL` environment variable (which Railway's Postgres
+   plugin injects automatically) and falls back to a local SQLite file
+   (`sqlite:///./patient_intake.db`) when `DATABASE_URL` is unset, so the
+   same code runs against Postgres in production and SQLite locally with no
+   code changes. It also rewrites a legacy `postgres://` URL scheme to
+   `postgresql://`, which SQLAlchemy 2.0 requires.
+
+Within the API layer:
+
 - **Validation lives in one place.** `app/validators.py` holds the regex/logic
   for names, phone numbers, state codes, ZIP codes, and date-of-birth
   plausibility. `app/schemas.py` wires these into `PatientCreate` (all
