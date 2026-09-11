@@ -36,6 +36,20 @@ def list_patients(
     return {"data": [_serialize(r) for r in records], "error": None}
 
 
+@router.get("/lookup", status_code=status.HTTP_200_OK)
+def lookup_patient(
+    phone_number: str = Query(..., description="Phone number to look up, any common US format"),
+    db: Session = Depends(get_db),
+):
+    try:
+        normalized_phone = validators.validate_phone(phone_number, "phone_number")
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    record = crud.get_patient_by_phone(db, normalized_phone)
+    return {"data": _serialize(record) if record else None, "error": None}
+
+
 @router.get("/{patient_id}", status_code=status.HTTP_200_OK)
 def get_patient(patient_id: str, db: Session = Depends(get_db)):
     record = crud.get_patient(db, patient_id)

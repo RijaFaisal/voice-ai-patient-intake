@@ -14,6 +14,14 @@ def get_patient(db: Session, patient_id: str, include_deleted: bool = False) -> 
     return query.first()
 
 
+def get_patient_by_phone(db: Session, phone_number: str) -> Optional[models.Patient]:
+    return (
+        db.query(models.Patient)
+        .filter(models.Patient.phone_number == phone_number, models.Patient.deleted_at.is_(None))
+        .first()
+    )
+
+
 def list_patients(
     db: Session,
     last_name: Optional[str] = None,
