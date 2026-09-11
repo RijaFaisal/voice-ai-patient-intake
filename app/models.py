@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, Date, DateTime
+from sqlalchemy import Column, Date, DateTime, ForeignKey
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import String
 
@@ -54,4 +54,19 @@ class Patient(Base):
     # System-managed
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+class Appointment(Base):
+    """Scheduled appointment for a patient."""
+
+    __tablename__ = "appointments"
+
+    appointment_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    patient_id = Column(String(36), ForeignKey("patients.patient_id"), nullable=False)
+    appointment_date = Column(DateTime, nullable=False)
+    reason = Column(String(255), nullable=True)
+
+    # System-managed
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)

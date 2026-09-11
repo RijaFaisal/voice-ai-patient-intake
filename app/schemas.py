@@ -240,6 +240,47 @@ class PatientOut(PatientBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AppointmentCreate(BaseModel):
+    patient_id: str
+    appointment_date: datetime = Field(
+        ...,
+        description="Appointment date/time, ISO 8601 (e.g. 2026-10-01T14:30:00). Cannot be in the past.",
+        examples=["2026-10-01T14:30:00"],
+    )
+    reason: Optional[str] = Field(None, max_length=255)
+
+    @field_validator("reason", mode="before")
+    @classmethod
+    def _empty_reason_to_none(cls, val):
+        return v.empty_str_to_none(val)
+
+    @field_validator("reason")
+    @classmethod
+    def _reason(cls, val: Optional[str]) -> Optional[str]:
+        if val is None:
+            return None
+        val = val.strip()
+        return val or None
+
+    @field_validator("appointment_date")
+    @classmethod
+    def _appointment_date(cls, val: datetime) -> datetime:
+        if val < datetime.utcnow():
+            raise ValueError("Appointment date cannot be in the past.")
+        return val
+
+
+class AppointmentOut(BaseModel):
+    appointment_id: str
+    patient_id: str
+    appointment_date: datetime
+    reason: Optional[str] = None
+    created_at: datetime
+    deleted_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ErrorDetail(BaseModel):
     code: str
     message: str

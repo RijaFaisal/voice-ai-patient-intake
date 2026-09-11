@@ -64,3 +64,26 @@ def soft_delete_patient(db: Session, db_patient: models.Patient) -> models.Patie
     db.commit()
     db.refresh(db_patient)
     return db_patient
+
+
+def get_appointment(db: Session, appointment_id: str) -> Optional[models.Appointment]:
+    return (
+        db.query(models.Appointment)
+        .filter(models.Appointment.appointment_id == appointment_id, models.Appointment.deleted_at.is_(None))
+        .first()
+    )
+
+
+def list_appointments(db: Session, patient_id: Optional[str] = None) -> List[models.Appointment]:
+    query = db.query(models.Appointment).filter(models.Appointment.deleted_at.is_(None))
+    if patient_id:
+        query = query.filter(models.Appointment.patient_id == patient_id)
+    return query.order_by(models.Appointment.appointment_date).all()
+
+
+def create_appointment(db: Session, appointment_in: schemas.AppointmentCreate) -> models.Appointment:
+    db_appointment = models.Appointment(**appointment_in.model_dump(), created_at=datetime.utcnow())
+    db.add(db_appointment)
+    db.commit()
+    db.refresh(db_appointment)
+    return db_appointment

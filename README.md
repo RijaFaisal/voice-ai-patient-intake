@@ -2,11 +2,12 @@
 
 A FastAPI backend for patient registration/intake, paired with a Vapi voice
 agent ("Mira") that registers patients over a phone call. It exposes a
-five-endpoint REST API for creating, listing, retrieving, partially
-updating, and soft-deleting patient demographic records, with server-side
-validation on all patient-supplied fields. The deployed instance runs on
-Railway against a PostgreSQL database; the same code runs locally against
-SQLite with zero configuration.
+REST API for creating, listing, retrieving, partially updating, and
+soft-deleting patient demographic records, plus scheduling and listing
+appointments for those patients, with server-side validation on all
+supplied fields. The deployed instance runs on Railway against a
+PostgreSQL database; the same code runs locally against SQLite with zero
+configuration.
 
 ## Live demo
 
@@ -32,12 +33,13 @@ SQLite with zero configuration.
 app/
   main.py            FastAPI app, startup table creation, exception handlers (error envelope)
   database.py        SQLAlchemy engine/session, get_db() dependency
-  models.py           SQLAlchemy Patient model + Sex enum
+  models.py           SQLAlchemy Patient + Appointment models, Sex enum
   schemas.py          Pydantic request/response schemas + field validators
   validators.py        Reusable validation functions (name, phone, state, zip, DOB)
   crud.py              DB access functions (list/get/create/update/soft-delete)
   routers/
-    patients.py        The five /patients endpoints
+    patients.py        The /patients endpoints
+    appointments.py     The /appointments endpoints
 seed.py                 Inserts 1-2 sample patient records
 requirements.txt
 .env.example
@@ -145,6 +147,17 @@ needs to register and bill a patient. Email, insurance (self-pay patients
 have none), preferred language, and emergency contact are commonly collected
 but not blocking, so they're optional.
 
+`Appointment` (table `appointments`):
+
+| Field | Required | Notes |
+|---|---|---|
+| `appointment_id` | auto | UUID v4, primary key, server-generated |
+| `patient_id` | **yes** | foreign key to `patients.patient_id`; must reference an existing, non-deleted patient |
+| `appointment_date` | **yes** | ISO 8601 date-time (e.g. `2026-10-01T14:30:00`); cannot be in the past |
+| `reason` | no | free text, up to 255 characters |
+| `created_at` | auto | set on insert |
+| `deleted_at` | auto | `null` unless soft-deleted |
+
 ## Voice agent
 
 The Vapi voice agent, Mira, handles patient registration by phone: it
@@ -232,8 +245,52 @@ untouched. Each supplied field is validated with the same rules as `POST`.
 Soft-delete: sets `deleted_at` (and `updated_at`); the row is never removed
 from the database. → `200` with the now-deleted patient record, or `404`.
 
+### `GET /patients/lookup`
+Look up an active (non-deleted) patient by phone number. Query param
+`phone_number` is required and accepts any format the phone validator
+accepts. → `200` with `data` set to the matching patient, or `data: null` if
+no patient has that phone number (not a `404` — this lets callers
+distinguish "no match" from an error). `400` if `phone_number` fails
+validation.
+
+### `GET /patients/lookup/{phone_number}`
+Path-parameter equivalent of `GET /patients/lookup` — same lookup, same
+response shape, same `400`/`200`-with-`null` behavior. Defined before
+`GET /patients/{patient_id}` so `lookup` is never captured as a
+`patient_id`.
+
+### `GET /appointments`
+Lists non-deleted appointments, ordered by `appointment_date`. Optional
+query filter: `patient_id`. → `200`, `data` is an array.
+
+### `GET /appointments/{appointment_id}`
+→ `200` with the appointment, or `404` if not found or soft-deleted.
+
+### `POST /appointments`
+Body: `patient_id` (must reference an existing, non-deleted patient) and
+`appointment_date` (ISO 8601, cannot be in the past); `reason` is optional.
+→ `201` with the created appointment, `404` if `patient_id` doesn't match
+an existing patient, or `422` on validation failure (e.g. a past date).
+
+```bash
+curl -X POST http://127.0.0.1:8000/appointments \
+  -H "Content-Type: application/json" \
+  -d '{
+    "patient_id": "<existing patient_id>",
+    "appointment_date": "2026-10-01T14:30:00",
+    "reason": "Annual checkup"
+  }'
+```
+
 ## Known limitations
 
+- **No update/cancel endpoint for appointments.** `POST` and the two `GET`s
+  are the only appointment endpoints — there's no `PUT` to reschedule and no
+  `DELETE` to cancel/soft-delete an appointment yet.
+- **No double-booking check.** Creating an appointment doesn't check for
+  overlapping appointments for the same patient or a shared resource
+  (provider/room) — any number of appointments can be scheduled at the same
+  `appointment_date`.
 - **No authentication/authorization.** There's no auth layer, so this is not
   deployable as-is against real patient data. A production deployment
   handling PHI needs an auth scheme (e.g. OAuth2/JWT), audit logging of who
