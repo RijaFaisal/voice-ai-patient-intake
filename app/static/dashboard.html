@@ -122,6 +122,8 @@
     display: flex;
     align-items: center;
     gap: 16px;
+    cursor: default;
+    user-select: none;
   }
 
   .stat-icon-chip {
@@ -230,6 +232,10 @@
     background: var(--card);
   }
 
+  .card + .card {
+    margin-top: 24px;
+  }
+
   .table-scroll {
     overflow-x: auto;
   }
@@ -238,6 +244,10 @@
     width: 100%;
     border-collapse: collapse;
     min-width: 720px;
+  }
+
+  table.appointments-table {
+    min-width: 560px;
   }
 
   thead th {
@@ -450,6 +460,44 @@
       <button class="retry-btn" id="retryBtn">Try again</button>
     </div>
   </section>
+
+  <section class="card">
+    <div class="table-card-header">
+      <h2>Appointments</h2>
+    </div>
+
+    <div class="table-scroll" id="appointmentsTableScroll">
+      <table class="appointments-table">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Date &amp; Time</th>
+            <th>Reason</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody id="appointmentsBody">
+          <!-- skeleton rows shown while loading -->
+          <tr class="skeleton-row"><td colspan="4"><span class="skeleton-bar" style="width:90%"></span></td></tr>
+          <tr class="skeleton-row"><td colspan="4"><span class="skeleton-bar" style="width:85%"></span></td></tr>
+          <tr class="skeleton-row"><td colspan="4"><span class="skeleton-bar" style="width:92%"></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="appointmentsEmptyState" class="state-panel" hidden>
+      <div class="state-icon"><i data-lucide="calendar-x"></i></div>
+      <h3>No appointments scheduled yet</h3>
+      <p>Scheduled appointments will show up here automatically.</p>
+    </div>
+
+    <div id="appointmentsErrorState" class="state-panel is-error" hidden>
+      <div class="state-icon"><i data-lucide="alert-triangle"></i></div>
+      <h3>Couldn't load appointments</h3>
+      <p id="appointmentsErrorMessage">Something went wrong talking to the API.</p>
+      <button class="retry-btn" id="appointmentsRetryBtn">Try again</button>
+    </div>
+  </section>
 </div>
 
 <script>
@@ -462,7 +510,16 @@
   var retryBtn = document.getElementById('retryBtn');
   var tableScroll = document.querySelector('.table-scroll');
 
+  var appointmentsBody = document.getElementById('appointmentsBody');
+  var appointmentsTableScroll = document.getElementById('appointmentsTableScroll');
+  var appointmentsEmptyState = document.getElementById('appointmentsEmptyState');
+  var appointmentsErrorState = document.getElementById('appointmentsErrorState');
+  var appointmentsErrorMessage = document.getElementById('appointmentsErrorMessage');
+  var appointmentsRetryBtn = document.getElementById('appointmentsRetryBtn');
+
   var allPatients = [];
+  var allAppointments = [];
+  var patientsById = {};
 
   function icons() {
     if (window.lucide) window.lucide.createIcons();
@@ -496,6 +553,27 @@
     var d = new Date(isoDateTime);
     if (isNaN(d.getTime())) return '—';
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  function formatAppointmentDateTime(isoDateTime) {
+    if (!isoDateTime) return '—';
+    var d = new Date(isoDateTime);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+
+  function indexPatients(patients) {
+    patientsById = {};
+    patients.forEach(function (p) { patientsById[p.patient_id] = p; });
+  }
+
+  function patientNameFor(patientId) {
+    var p = patientsById[patientId];
+    if (!p) return 'Unknown patient';
+    return ((p.first_name || '') + ' ' + (p.last_name || '')).trim() || 'Unknown patient';
   }
 
   function isToday(isoDateTime) {
@@ -577,6 +655,49 @@
     icons();
   }
 
+  function appointmentRowHtml(a) {
+    return (
+      '<tr>' +
+        '<td><div class="patient-name">' + escapeHtml(patientNameFor(a.patient_id)) + '</div></td>' +
+        '<td>' + formatAppointmentDateTime(a.appointment_date) + '</td>' +
+        '<td>' + escapeHtml(a.reason || '—') + '</td>' +
+        '<td>' + formatRegistered(a.created_at) + '</td>' +
+      '</tr>'
+    );
+  }
+
+  function renderAppointmentsTable(appointments) {
+    if (appointments.length === 0) {
+      appointmentsBody.innerHTML = '';
+      appointmentsEmptyState.hidden = false;
+      appointmentsTableScroll.hidden = true;
+      return;
+    }
+    appointmentsEmptyState.hidden = true;
+    appointmentsTableScroll.hidden = false;
+    appointmentsBody.innerHTML = appointments.map(appointmentRowHtml).join('');
+    icons();
+  }
+
+  function showAppointmentsError(message) {
+    appointmentsErrorState.hidden = false;
+    appointmentsTableScroll.hidden = true;
+    appointmentsEmptyState.hidden = true;
+    appointmentsBody.innerHTML = '';
+    appointmentsErrorMessage.textContent = message || 'Something went wrong talking to the API.';
+    icons();
+  }
+
+  function resetAppointmentsForLoad() {
+    appointmentsErrorState.hidden = true;
+    appointmentsEmptyState.hidden = true;
+    appointmentsTableScroll.hidden = false;
+    appointmentsBody.innerHTML =
+      '<tr class="skeleton-row"><td colspan="4"><span class="skeleton-bar" style="width:90%"></span></td></tr>' +
+      '<tr class="skeleton-row"><td colspan="4"><span class="skeleton-bar" style="width:85%"></span></td></tr>' +
+      '<tr class="skeleton-row"><td colspan="4"><span class="skeleton-bar" style="width:92%"></span></td></tr>';
+  }
+
   function applySearch() {
     var q = searchInput.value.trim().toLowerCase();
     var qDigits = digitsOnly(searchInput.value);
@@ -621,48 +742,65 @@
   }
 
   function fetchJson(url) {
-    return fetch(url, { headers: { Accept: 'application/json' } }).then(function (res) {
-      return res.json().then(function (body) {
-        return { ok: res.ok, status: res.status, body: body };
+    return fetch(url, { headers: { Accept: 'application/json' } })
+      .then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          return { ok: res.ok, status: res.status, body: body };
+        });
+      })
+      .catch(function () {
+        return { ok: false, status: 0, body: { error: { message: 'Could not reach the API.' } } };
       });
-    });
   }
 
   function load() {
     resetForLoad();
+    resetAppointmentsForLoad();
 
     var patientsPromise = fetchJson('/patients');
-    var appointmentsPromise = fetchJson('/appointments').catch(function () { return null; });
+    var appointmentsPromise = fetchJson('/appointments');
 
     Promise.all([patientsPromise, appointmentsPromise]).then(function (results) {
       var patientsResult = results[0];
       var appointmentsResult = results[1];
 
-      if (!patientsResult.ok || patientsResult.body.error) {
+      var patientsOk = patientsResult.ok && !patientsResult.body.error;
+      var appointmentsOk = appointmentsResult.ok && !appointmentsResult.body.error;
+
+      if (!patientsOk) {
         var msg = (patientsResult.body && patientsResult.body.error && patientsResult.body.error.message) ||
           'The server returned an error loading patients.';
         showError(msg);
+        showAppointmentsError('Patients failed to load, so appointments can\'t be matched to a patient name.');
         return;
       }
 
       allPatients = patientsResult.body.data || [];
+      indexPatients(allPatients);
 
-      var appointmentsCount = null;
-      if (appointmentsResult && appointmentsResult.ok && !appointmentsResult.body.error) {
-        appointmentsCount = (appointmentsResult.body.data || []).length;
-      }
-
-      renderStats(allPatients, appointmentsCount);
+      renderStats(allPatients, appointmentsOk ? (appointmentsResult.body.data || []).length : null);
       renderTable(allPatients);
       searchInput.disabled = false;
+
+      if (appointmentsOk) {
+        allAppointments = appointmentsResult.body.data || [];
+        renderAppointmentsTable(allAppointments);
+      } else {
+        var aMsg = (appointmentsResult.body && appointmentsResult.body.error && appointmentsResult.body.error.message) ||
+          'The server returned an error loading appointments.';
+        showAppointmentsError(aMsg);
+      }
+
       icons();
     }).catch(function () {
       showError('Could not reach the API. Check your connection and try again.');
+      showAppointmentsError('Could not reach the API. Check your connection and try again.');
     });
   }
 
   searchInput.addEventListener('input', applySearch);
   retryBtn.addEventListener('click', load);
+  appointmentsRetryBtn.addEventListener('click', load);
 
   icons();
   load();
