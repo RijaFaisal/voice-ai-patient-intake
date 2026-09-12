@@ -103,27 +103,6 @@
     color: rgba(255, 255, 255, 0.72);
   }
 
-  .live-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12.5px;
-    font-weight: 500;
-    color: #FFFFFF;
-    background: rgba(255, 255, 255, 0.14);
-    padding: 6px 12px;
-    border-radius: 999px;
-    white-space: nowrap;
-  }
-
-  .live-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #7FE3C4;
-    box-shadow: 0 0 0 3px rgba(127, 227, 196, 0.28);
-  }
-
   /* Stat cards */
   .stats-grid {
     display: grid;
@@ -250,6 +229,47 @@
     background: var(--card);
   }
 
+  .table-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .select-wrap { position: relative; }
+
+  .select-wrap svg {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    color: var(--text-faint);
+    pointer-events: none;
+  }
+
+  .filter-select {
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 30px 9px 12px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .filter-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
   .card + .card {
     margin-top: 24px;
   }
@@ -283,6 +303,19 @@
     white-space: nowrap;
   }
 
+  .sortable-th { cursor: pointer; user-select: none; }
+  .sortable-th:hover { color: var(--text); }
+  .sort-icon {
+    width: 12px;
+    height: 12px;
+    margin-left: 4px;
+    opacity: 0.3;
+    vertical-align: -2px;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+  .sortable-th.sort-active .sort-icon { opacity: 1; color: var(--accent-dark); }
+  .sortable-th.sort-desc .sort-icon { transform: rotate(180deg); }
+
   tbody td {
     padding: 14px 22px;
     font-size: 14px;
@@ -297,6 +330,18 @@
 
   .patient-name { font-weight: 600; }
   .patient-name .row-sub { font-weight: 400; color: var(--text-muted); font-size: 12.5px; margin-top: 1px; }
+
+  .patient-name-link {
+    font: inherit;
+    font-weight: 600;
+    color: var(--text);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+  }
+  .patient-name-link:hover { color: var(--accent-dark); text-decoration: underline; }
 
   .pill {
     display: inline-flex;
@@ -356,8 +401,8 @@
     border-radius: var(--radius-lg);
     box-shadow: 0 24px 64px rgba(16, 24, 40, 0.28);
     width: 100%;
-    max-width: 640px;
-    max-height: min(680px, 84vh);
+    max-width: 720px;
+    max-height: min(760px, 88vh);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -406,11 +451,50 @@
 
   .modal-body {
     overflow-y: auto;
-    padding: 6px 0;
+    padding: 4px 0;
   }
 
+  .modal-section {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-section:last-child { border-bottom: none; }
+
+  .modal-section-title {
+    margin: 0 0 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px 20px;
+    margin: 0;
+  }
+  .info-grid dt { font-size: 11.5px; color: var(--text-muted); margin-bottom: 2px; }
+  .info-grid dd { margin: 0; font-size: 14px; color: var(--text); font-weight: 500; }
+
+  .modal-empty { margin: 0; font-size: 13.5px; color: var(--text-faint); }
+
+  .appt-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+  }
+  .appt-item:last-child { border-bottom: none; }
+  .appt-item .appt-date { font-weight: 600; color: var(--text); white-space: nowrap; }
+  .appt-item .appt-reason { color: var(--text-muted); text-align: right; }
+
   .transcript-item {
-    padding: 16px 24px;
+    padding: 14px 0;
     border-bottom: 1px solid var(--border);
   }
   .transcript-item:last-child { border-bottom: none; }
@@ -545,7 +629,9 @@
     .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
     .page-header h1 { font-size: 22px; }
     .table-card-header { flex-direction: column; align-items: stretch; }
+    .table-controls { flex-direction: column; align-items: stretch; }
     .search-wrap { width: 100%; }
+    .filter-select { width: 100%; }
     .stats-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
     .stat-card { padding: 16px; gap: 12px; }
     .stat-icon-chip { width: 38px; height: 38px; }
@@ -561,7 +647,6 @@
         <h1>Patient Intake Dashboard</h1>
         <p class="subtitle">Registered patients, live from the database.</p>
       </div>
-      <span class="live-badge"><span class="live-dot"></span>Live</span>
     </header>
 
     <section class="stats-grid" id="statsGrid" aria-label="Summary statistics">
@@ -601,9 +686,29 @@
   <section class="card">
     <div class="table-card-header">
       <h2>Patients</h2>
-      <div class="search-wrap">
-        <i data-lucide="search"></i>
-        <input id="searchInput" type="text" placeholder="Search by name or phone…" disabled />
+      <div class="table-controls">
+        <div class="select-wrap">
+          <select id="insuranceFilter" class="filter-select" disabled>
+            <option value="all">All insurance</option>
+            <option value="with">With insurance</option>
+            <option value="without">None on file</option>
+          </select>
+          <i data-lucide="chevron-down"></i>
+        </div>
+        <div class="select-wrap">
+          <select id="sexFilter" class="filter-select" disabled>
+            <option value="all">All sexes</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+            <option value="Decline to Answer">Decline to answer</option>
+          </select>
+          <i data-lucide="chevron-down"></i>
+        </div>
+        <div class="search-wrap">
+          <i data-lucide="search"></i>
+          <input id="searchInput" type="text" placeholder="Search by name or phone…" disabled />
+        </div>
       </div>
     </div>
 
@@ -611,12 +716,12 @@
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Date of Birth</th>
+            <th class="sortable-th" data-sort-key="name">Name<i data-lucide="chevron-up" class="sort-icon"></i></th>
+            <th class="sortable-th" data-sort-key="dob">Date of Birth<i data-lucide="chevron-up" class="sort-icon"></i></th>
             <th>Sex</th>
             <th>Phone</th>
             <th>City / State</th>
-            <th>Registered</th>
+            <th class="sortable-th" data-sort-key="registered">Registered<i data-lucide="chevron-up" class="sort-icon"></i></th>
             <th>Insurance</th>
             <th>Transcripts</th>
           </tr>
@@ -684,18 +789,18 @@
   </section>
 </div>
 
-<div class="modal-overlay" id="transcriptModal" hidden>
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="transcriptModalTitle">
+<div class="modal-overlay" id="patientModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="patientModalTitle">
     <div class="modal-header">
       <div>
-        <h3 id="transcriptModalTitle">Call transcripts</h3>
-        <p id="transcriptModalSubtitle" class="modal-subtitle"></p>
+        <h3 id="patientModalTitle">Patient</h3>
+        <p id="patientModalSubtitle" class="modal-subtitle"></p>
       </div>
-      <button class="modal-close" id="transcriptModalClose" type="button" aria-label="Close">
+      <button class="modal-close" id="patientModalClose" type="button" aria-label="Close">
         <i data-lucide="x"></i>
       </button>
     </div>
-    <div class="modal-body" id="transcriptModalBody"></div>
+    <div class="modal-body" id="patientModalBody"></div>
   </div>
 </div>
 
@@ -703,11 +808,15 @@
 (function () {
   var patientsBody = document.getElementById('patientsBody');
   var searchInput = document.getElementById('searchInput');
+  var insuranceFilter = document.getElementById('insuranceFilter');
+  var sexFilter = document.getElementById('sexFilter');
   var emptyState = document.getElementById('emptyState');
   var errorState = document.getElementById('errorState');
   var errorMessage = document.getElementById('errorMessage');
   var retryBtn = document.getElementById('retryBtn');
   var tableScroll = document.querySelector('.table-scroll');
+
+  var sortState = { key: null, dir: 'asc' };
 
   var appointmentsBody = document.getElementById('appointmentsBody');
   var appointmentsTableScroll = document.getElementById('appointmentsTableScroll');
@@ -716,11 +825,11 @@
   var appointmentsErrorMessage = document.getElementById('appointmentsErrorMessage');
   var appointmentsRetryBtn = document.getElementById('appointmentsRetryBtn');
 
-  var transcriptModal = document.getElementById('transcriptModal');
-  var transcriptModalTitle = document.getElementById('transcriptModalTitle');
-  var transcriptModalSubtitle = document.getElementById('transcriptModalSubtitle');
-  var transcriptModalBody = document.getElementById('transcriptModalBody');
-  var transcriptModalClose = document.getElementById('transcriptModalClose');
+  var patientModal = document.getElementById('patientModal');
+  var patientModalTitle = document.getElementById('patientModalTitle');
+  var patientModalSubtitle = document.getElementById('patientModalSubtitle');
+  var patientModalBody = document.getElementById('patientModalBody');
+  var patientModalClose = document.getElementById('patientModalClose');
 
   var allPatients = [];
   var allAppointments = [];
@@ -853,7 +962,7 @@
 
     return (
       '<tr data-search="' + escapeHtml((name + ' ' + (p.phone_number || '')).toLowerCase()) + '">' +
-        '<td><div class="patient-name">' + escapeHtml(name) + '</div></td>' +
+        '<td><button class="patient-name-link" type="button" data-patient-id="' + escapeHtml(p.patient_id) + '">' + escapeHtml(name) + '</button></td>' +
         '<td>' + formatDob(p.date_of_birth) + '</td>' +
         '<td>' + escapeHtml(p.sex || '—') + '</td>' +
         '<td>' + formatPhone(p.phone_number) + '</td>' +
@@ -943,37 +1052,93 @@
     );
   }
 
-  function openTranscriptModal(patientId) {
-    var patient = patientsById[patientId];
-    var transcripts = transcriptsByPatient[patientId] || [];
+  function patientInfoHtml(p) {
+    var addressParts = [p.address_line_1, p.address_line_2].filter(Boolean).map(escapeHtml).join(', ');
+    var insurance = p.insurance_provider
+      ? escapeHtml(p.insurance_provider) + (p.insurance_member_id ? ' (' + escapeHtml(p.insurance_member_id) + ')' : '')
+      : 'None on file';
+    var emergency = p.emergency_contact_name
+      ? escapeHtml(p.emergency_contact_name) + (p.emergency_contact_phone ? ' · ' + formatPhone(p.emergency_contact_phone) : '')
+      : '—';
 
-    transcriptModalTitle.textContent = patient ? ((patient.first_name || '') + ' ' + (patient.last_name || '')).trim() : 'Call transcripts';
-    transcriptModalSubtitle.textContent = transcripts.length + (transcripts.length === 1 ? ' call transcript' : ' call transcripts');
-    transcriptModalBody.innerHTML = transcripts.map(transcriptItemHtml).join('');
+    var rows = [
+      ['Date of Birth', formatDob(p.date_of_birth)],
+      ['Sex', escapeHtml(p.sex || '—')],
+      ['Phone', formatPhone(p.phone_number)],
+      ['Email', escapeHtml(p.email || '—')],
+      ['Address', addressParts || '—'],
+      ['City / State', escapeHtml(p.city || '—') + ', ' + escapeHtml(p.state || '—')],
+      ['ZIP', escapeHtml(p.zip_code || '—')],
+      ['Insurance', insurance],
+      ['Preferred Language', escapeHtml(p.preferred_language || '—')],
+      ['Emergency Contact', emergency],
+      ['Registered', formatRegistered(p.created_at)]
+    ];
 
-    transcriptModal.hidden = false;
-    document.body.style.overflow = 'hidden';
-    requestAnimationFrame(function () { transcriptModal.classList.add('is-open'); });
-    icons();
-    transcriptModalClose.focus();
+    return '<dl class="info-grid">' + rows.map(function (r) {
+      return '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>';
+    }).join('') + '</dl>';
   }
 
-  function closeTranscriptModal() {
-    transcriptModal.classList.remove('is-open');
+  function patientAppointmentsHtml(patientId) {
+    var appts = allAppointments.filter(function (a) { return a.patient_id === patientId; });
+    if (appts.length === 0) {
+      return '<p class="modal-empty">No appointments scheduled.</p>';
+    }
+    return appts.map(function (a) {
+      return (
+        '<div class="appt-item">' +
+          '<span class="appt-date">' + formatAppointmentDateTime(a.appointment_date) + '</span>' +
+          '<span class="appt-reason">' + escapeHtml(a.reason || 'No reason given') + '</span>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function patientTranscriptsHtml(patientId) {
+    var transcripts = transcriptsByPatient[patientId] || [];
+    if (transcripts.length === 0) {
+      return '<p class="modal-empty">No call transcripts for this patient.</p>';
+    }
+    return transcripts.map(transcriptItemHtml).join('');
+  }
+
+  function openPatientModal(patientId) {
+    var patient = patientsById[patientId];
+    if (!patient) return;
+
+    var name = ((patient.first_name || '') + ' ' + (patient.last_name || '')).trim() || 'Patient';
+    patientModalTitle.textContent = name;
+    patientModalSubtitle.textContent = formatPhone(patient.phone_number) + ' · ' + (patient.city || '—') + ', ' + (patient.state || '—');
+
+    patientModalBody.innerHTML =
+      '<div class="modal-section"><h4 class="modal-section-title">Patient Info</h4>' + patientInfoHtml(patient) + '</div>' +
+      '<div class="modal-section"><h4 class="modal-section-title">Appointments</h4>' + patientAppointmentsHtml(patientId) + '</div>' +
+      '<div class="modal-section"><h4 class="modal-section-title">Call Transcripts</h4>' + patientTranscriptsHtml(patientId) + '</div>';
+
+    patientModal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { patientModal.classList.add('is-open'); });
+    icons();
+    patientModalClose.focus();
+  }
+
+  function closePatientModal() {
+    patientModal.classList.remove('is-open');
     document.body.style.overflow = '';
     setTimeout(function () {
-      transcriptModal.hidden = true;
-      transcriptModalBody.innerHTML = '';
+      patientModal.hidden = true;
+      patientModalBody.innerHTML = '';
     }, 150);
   }
 
   patientsBody.addEventListener('click', function (e) {
-    var btn = e.target.closest('.transcript-link');
-    if (!btn) return;
-    openTranscriptModal(btn.getAttribute('data-patient-id'));
+    var trigger = e.target.closest('.patient-name-link, .transcript-link');
+    if (!trigger) return;
+    openPatientModal(trigger.getAttribute('data-patient-id'));
   });
 
-  transcriptModalBody.addEventListener('click', function (e) {
+  patientModalBody.addEventListener('click', function (e) {
     var btn = e.target.closest('.transcript-toggle');
     if (!btn) return;
     var target = document.getElementById(btn.getAttribute('data-target'));
@@ -984,30 +1149,88 @@
     btn.querySelector('.toggle-label').textContent = expanded ? 'View full transcript' : 'Hide full transcript';
   });
 
-  transcriptModalClose.addEventListener('click', closeTranscriptModal);
-  transcriptModal.addEventListener('click', function (e) {
-    if (e.target === transcriptModal) closeTranscriptModal();
+  patientModalClose.addEventListener('click', closePatientModal);
+  patientModal.addEventListener('click', function (e) {
+    if (e.target === patientModal) closePatientModal();
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !transcriptModal.hidden) closeTranscriptModal();
+    if (e.key === 'Escape' && !patientModal.hidden) closePatientModal();
   });
 
-  function applySearch() {
+  function getFilteredPatients() {
     var q = searchInput.value.trim().toLowerCase();
     var qDigits = digitsOnly(searchInput.value);
-    if (!q) {
-      renderTable(allPatients);
-      return;
-    }
-    var filtered = allPatients.filter(function (p) {
-      var name = ((p.first_name || '') + ' ' + (p.last_name || '')).toLowerCase();
-      var phoneDigits = digitsOnly(p.phone_number);
-      if (name.indexOf(q) !== -1) return true;
-      if (qDigits && phoneDigits.indexOf(qDigits) !== -1) return true;
-      return false;
+    var insuranceVal = insuranceFilter.value;
+    var sexVal = sexFilter.value;
+
+    return allPatients.filter(function (p) {
+      if (q) {
+        var name = ((p.first_name || '') + ' ' + (p.last_name || '')).toLowerCase();
+        var phoneDigits = digitsOnly(p.phone_number);
+        var matchesQuery = name.indexOf(q) !== -1 || (!!qDigits && phoneDigits.indexOf(qDigits) !== -1);
+        if (!matchesQuery) return false;
+      }
+      if (insuranceVal !== 'all') {
+        var hasInsurance = !!(p.insurance_provider && p.insurance_provider.trim());
+        if (insuranceVal === 'with' && !hasInsurance) return false;
+        if (insuranceVal === 'without' && hasInsurance) return false;
+      }
+      if (sexVal !== 'all' && p.sex !== sexVal) return false;
+      return true;
     });
-    renderTable(filtered);
   }
+
+  function compareValues(a, b) {
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return 0;
+  }
+
+  function sortPatients(patients) {
+    if (!sortState.key) return patients;
+    var sorted = patients.slice();
+    sorted.sort(function (a, b) {
+      var result = 0;
+      if (sortState.key === 'name') {
+        result = compareValues(
+          ((a.last_name || '') + ' ' + (a.first_name || '')).toLowerCase(),
+          ((b.last_name || '') + ' ' + (b.first_name || '')).toLowerCase()
+        );
+      } else if (sortState.key === 'dob') {
+        result = compareValues(a.date_of_birth || '', b.date_of_birth || '');
+      } else if (sortState.key === 'registered') {
+        result = compareValues(a.created_at || '', b.created_at || '');
+      }
+      return sortState.dir === 'desc' ? -result : result;
+    });
+    return sorted;
+  }
+
+  function updateSortIndicators() {
+    document.querySelectorAll('.sortable-th').forEach(function (th) {
+      var key = th.getAttribute('data-sort-key');
+      th.classList.toggle('sort-active', sortState.key === key);
+      th.classList.toggle('sort-desc', sortState.key === key && sortState.dir === 'desc');
+    });
+  }
+
+  function refreshPatientsView() {
+    renderTable(sortPatients(getFilteredPatients()));
+  }
+
+  document.querySelectorAll('.sortable-th').forEach(function (th) {
+    th.addEventListener('click', function () {
+      var key = th.getAttribute('data-sort-key');
+      if (sortState.key === key) {
+        sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortState.key = key;
+        sortState.dir = 'asc';
+      }
+      updateSortIndicators();
+      refreshPatientsView();
+    });
+  });
 
   function showError(message) {
     errorState.hidden = false;
@@ -1023,6 +1246,8 @@
     emptyState.hidden = true;
     tableScroll.hidden = false;
     searchInput.disabled = true;
+    insuranceFilter.disabled = true;
+    sexFilter.disabled = true;
     patientsBody.innerHTML =
       '<tr class="skeleton-row"><td colspan="8"><span class="skeleton-bar" style="width:90%"></span></td></tr>' +
       '<tr class="skeleton-row"><td colspan="8"><span class="skeleton-bar" style="width:85%"></span></td></tr>' +
@@ -1079,8 +1304,10 @@
       indexTranscripts(allTranscripts);
 
       renderStats(allPatients, appointmentsOk ? (appointmentsResult.body.data || []).length : null);
-      renderTable(allPatients);
+      refreshPatientsView();
       searchInput.disabled = false;
+      insuranceFilter.disabled = false;
+      sexFilter.disabled = false;
 
       if (appointmentsOk) {
         allAppointments = appointmentsResult.body.data || [];
@@ -1098,7 +1325,9 @@
     });
   }
 
-  searchInput.addEventListener('input', applySearch);
+  searchInput.addEventListener('input', refreshPatientsView);
+  insuranceFilter.addEventListener('change', refreshPatientsView);
+  sexFilter.addEventListener('change', refreshPatientsView);
   retryBtn.addEventListener('click', load);
   appointmentsRetryBtn.addEventListener('click', load);
 
