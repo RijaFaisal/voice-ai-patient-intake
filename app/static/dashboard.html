@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Patient Intake Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  :root {
+    --bg: #F7F8FA;
+    --card: #FFFFFF;
+    --border: #E9EAED;
+    --text: #1E2226;
+    --text-muted: #767C87;
+    --text-faint: #9AA0AA;
+
+    --accent: #7CA9A0;
+    --accent-dark: #4E7A70;
+    --accent-soft: #E4EEEC;
+
+    --accent-blue: #8FB3C9;
+    --accent-blue-dark: #4F7690;
+    --accent-blue-soft: #E7EEF2;
+
+    --accent-amber: #D9AE73;
+    --accent-amber-dark: #9C7635;
+    --accent-amber-soft: #F5ECDD;
+
+    --accent-lavender: #A8A0C9;
+    --accent-lavender-dark: #6C6392;
+    --accent-lavender-soft: #ECE9F5;
+
+    --success-bg: #E5F1E8;
+    --success-text: #3E7C51;
+    --neutral-pill-bg: #F0F1F3;
+    --neutral-pill-text: #767C87;
+
+    --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 2px 8px rgba(16, 24, 40, 0.05);
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 40px 32px 64px;
+  }
+
+  /* Header */
+  .page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .page-header h1 {
+    margin: 0 0 6px;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .page-header .subtitle {
+    margin: 0;
+    font-size: 14.5px;
+    color: var(--text-muted);
+  }
+
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--accent-dark);
+    background: var(--accent-soft);
+    padding: 6px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  /* Stat cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .stat-icon-chip {
+    flex: none;
+    width: 46px;
+    height: 46px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .stat-icon-chip svg { width: 22px; height: 22px; }
+
+  .stat-icon-chip.teal   { background: var(--accent-soft); color: var(--accent-dark); }
+  .stat-icon-chip.blue   { background: var(--accent-blue-soft); color: var(--accent-blue-dark); }
+  .stat-icon-chip.amber  { background: var(--accent-amber-soft); color: var(--accent-amber-dark); }
+  .stat-icon-chip.lavender { background: var(--accent-lavender-soft); color: var(--accent-lavender-dark); }
+
+  .stat-body { min-width: 0; }
+
+  .stat-number {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .stat-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .stat-skeleton .stat-number,
+  .stat-skeleton .stat-label {
+    color: transparent;
+    background: linear-gradient(90deg, #EEF0F2 25%, #F5F6F7 37%, #EEF0F2 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+    border-radius: 6px;
+  }
+  .stat-skeleton .stat-number { display: inline-block; width: 48px; height: 22px; }
+  .stat-skeleton .stat-label { display: inline-block; width: 96px; height: 12px; margin-top: 6px; }
+
+  /* Table card */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .table-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-card-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .search-wrap {
+    position: relative;
+    width: 260px;
+    max-width: 100%;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--text-faint);
+    pointer-events: none;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 9px 12px 9px 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .search-wrap input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    background: var(--card);
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 720px;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--card);
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    padding: 12px 22px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 14px 22px;
+    font-size: 14px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) { background: #FBFBFC; }
+  tbody tr:hover { background: var(--accent-soft); }
+
+  .patient-name { font-weight: 600; }
+  .patient-name .row-sub { font-weight: 400; color: var(--text-muted); font-size: 12.5px; margin-top: 1px; }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+
+  .pill svg { width: 12px; height: 12px; }
+
+  .pill.success { background: var(--success-bg); color: var(--success-text); }
+  .pill.neutral { background: var(--neutral-pill-bg); color: var(--neutral-pill-text); }
+
+  /* Skeleton rows */
+  .skeleton-bar {
+    display: inline-block;
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #EEF0F2 25%, #F5F6F7 37%, #EEF0F2 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+  }
+
+  /* Empty / error states */
+  .state-panel {
+    padding: 64px 24px;
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  .state-panel .state-icon {
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 14px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .state-panel.is-error .state-icon {
+    background: #FBEAEA;
+    color: #B4453F;
+  }
+
+  .state-panel .state-icon svg { width: 22px; height: 22px; }
+
+  .state-panel h3 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .state-panel p { margin: 0; font-size: 13.5px; }
+
+  .retry-btn {
+    margin-top: 16px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--accent-dark);
+    background: var(--accent-soft);
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  .retry-btn:hover { filter: brightness(0.96); }
+
+  [hidden] { display: none !important; }
+
+  @media (max-width: 640px) {
+    .page { padding: 24px 16px 48px; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .page-header h1 { font-size: 22px; }
+    .table-card-header { flex-direction: column; align-items: stretch; }
+    .search-wrap { width: 100%; }
+    .stats-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .stat-card { padding: 16px; gap: 12px; }
+    .stat-icon-chip { width: 38px; height: 38px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>Patient Intake Dashboard</h1>
+      <p class="subtitle">Registered patients, live from the database.</p>
+    </div>
+    <span class="live-badge"><span class="live-dot"></span>Live</span>
+  </header>
+
+  <section class="stats-grid" id="statsGrid" aria-label="Summary statistics">
+    <div class="stat-card stat-skeleton" data-stat="total">
+      <div class="stat-icon-chip teal"><i data-lucide="users"></i></div>
+      <div class="stat-body">
+        <div class="stat-number">--</div>
+        <div class="stat-label">Total Patients</div>
+      </div>
+    </div>
+    <div class="stat-card stat-skeleton" data-stat="today">
+      <div class="stat-icon-chip blue"><i data-lucide="calendar-plus"></i></div>
+      <div class="stat-body">
+        <div class="stat-number">--</div>
+        <div class="stat-label">Registered Today</div>
+      </div>
+    </div>
+    <div class="stat-card stat-skeleton" data-stat="insurance">
+      <div class="stat-icon-chip amber"><i data-lucide="shield-check"></i></div>
+      <div class="stat-body">
+        <div class="stat-number">--</div>
+        <div class="stat-label">With Insurance on File</div>
+      </div>
+    </div>
+    <div class="stat-card stat-skeleton" data-stat="appointments">
+      <div class="stat-icon-chip lavender"><i data-lucide="calendar-clock"></i></div>
+      <div class="stat-body">
+        <div class="stat-number">--</div>
+        <div class="stat-label">Appointments Scheduled</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="table-card-header">
+      <h2>Patients</h2>
+      <div class="search-wrap">
+        <i data-lucide="search"></i>
+        <input id="searchInput" type="text" placeholder="Search by name or phone…" disabled />
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Date of Birth</th>
+            <th>Sex</th>
+            <th>Phone</th>
+            <th>City / State</th>
+            <th>Registered</th>
+            <th>Insurance</th>
+          </tr>
+        </thead>
+        <tbody id="patientsBody">
+          <!-- skeleton rows shown while loading -->
+          <tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:90%"></span></td></tr>
+          <tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:85%"></span></td></tr>
+          <tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:92%"></span></td></tr>
+          <tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:80%"></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="emptyState" class="state-panel" hidden>
+      <div class="state-icon"><i data-lucide="inbox"></i></div>
+      <h3>No patients registered yet</h3>
+      <p>New registrations will show up here automatically.</p>
+    </div>
+
+    <div id="errorState" class="state-panel is-error" hidden>
+      <div class="state-icon"><i data-lucide="alert-triangle"></i></div>
+      <h3>Couldn't load patients</h3>
+      <p id="errorMessage">Something went wrong talking to the API.</p>
+      <button class="retry-btn" id="retryBtn">Try again</button>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var patientsBody = document.getElementById('patientsBody');
+  var searchInput = document.getElementById('searchInput');
+  var emptyState = document.getElementById('emptyState');
+  var errorState = document.getElementById('errorState');
+  var errorMessage = document.getElementById('errorMessage');
+  var retryBtn = document.getElementById('retryBtn');
+  var tableScroll = document.querySelector('.table-scroll');
+
+  var allPatients = [];
+
+  function icons() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  function digitsOnly(str) {
+    return (str || '').replace(/\D/g, '');
+  }
+
+  function formatPhone(raw) {
+    var d = digitsOnly(raw);
+    if (d.length !== 10) return raw || '—';
+    return '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6);
+  }
+
+  function parseDateOnly(isoDate) {
+    // isoDate like "1988-04-12" — construct in local time to avoid a UTC-midnight day shift.
+    var parts = (isoDate || '').split('-');
+    if (parts.length !== 3) return null;
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
+
+  function formatDob(isoDate) {
+    var d = parseDateOnly(isoDate);
+    if (!d) return '—';
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  function formatRegistered(isoDateTime) {
+    if (!isoDateTime) return '—';
+    var d = new Date(isoDateTime);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  function isToday(isoDateTime) {
+    if (!isoDateTime) return false;
+    var d = new Date(isoDateTime);
+    if (isNaN(d.getTime())) return false;
+    var now = new Date();
+    return d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate();
+  }
+
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function setStat(key, value, label) {
+    var card = document.querySelector('.stat-card[data-stat="' + key + '"]');
+    if (!card) return;
+    card.classList.remove('stat-skeleton');
+    card.querySelector('.stat-number').textContent = value;
+    if (label) card.querySelector('.stat-label').textContent = label;
+  }
+
+  function hideStatCard(key) {
+    var card = document.querySelector('.stat-card[data-stat="' + key + '"]');
+    if (card) card.hidden = true;
+  }
+
+  function renderStats(patients, appointmentsCount) {
+    setStat('total', patients.length);
+
+    var today = patients.filter(function (p) { return isToday(p.created_at); }).length;
+    setStat('today', today);
+
+    var insured = patients.filter(function (p) { return !!(p.insurance_provider && p.insurance_provider.trim()); }).length;
+    setStat('insurance', insured);
+
+    if (appointmentsCount === null) {
+      hideStatCard('appointments');
+    } else {
+      setStat('appointments', appointmentsCount);
+    }
+  }
+
+  function rowHtml(p) {
+    var name = (p.first_name || '') + ' ' + (p.last_name || '');
+    var hasInsurance = !!(p.insurance_provider && p.insurance_provider.trim());
+    var pill = hasInsurance
+      ? '<span class="pill success"><i data-lucide="check-circle-2"></i>' + escapeHtml(p.insurance_provider) + '</span>'
+      : '<span class="pill neutral"><i data-lucide="circle-dashed"></i>None on file</span>';
+
+    return (
+      '<tr data-search="' + escapeHtml((name + ' ' + (p.phone_number || '')).toLowerCase()) + '">' +
+        '<td><div class="patient-name">' + escapeHtml(name) + '</div></td>' +
+        '<td>' + formatDob(p.date_of_birth) + '</td>' +
+        '<td>' + escapeHtml(p.sex || '—') + '</td>' +
+        '<td>' + formatPhone(p.phone_number) + '</td>' +
+        '<td>' + escapeHtml(p.city || '—') + ', ' + escapeHtml(p.state || '—') + '</td>' +
+        '<td>' + formatRegistered(p.created_at) + '</td>' +
+        '<td>' + pill + '</td>' +
+      '</tr>'
+    );
+  }
+
+  function renderTable(patients) {
+    if (patients.length === 0) {
+      patientsBody.innerHTML = '';
+      emptyState.hidden = false;
+      tableScroll.hidden = true;
+      return;
+    }
+    emptyState.hidden = true;
+    tableScroll.hidden = false;
+    patientsBody.innerHTML = patients.map(rowHtml).join('');
+    icons();
+  }
+
+  function applySearch() {
+    var q = searchInput.value.trim().toLowerCase();
+    var qDigits = digitsOnly(searchInput.value);
+    if (!q) {
+      renderTable(allPatients);
+      return;
+    }
+    var filtered = allPatients.filter(function (p) {
+      var name = ((p.first_name || '') + ' ' + (p.last_name || '')).toLowerCase();
+      var phoneDigits = digitsOnly(p.phone_number);
+      if (name.indexOf(q) !== -1) return true;
+      if (qDigits && phoneDigits.indexOf(qDigits) !== -1) return true;
+      return false;
+    });
+    renderTable(filtered);
+  }
+
+  function showError(message) {
+    errorState.hidden = false;
+    tableScroll.hidden = true;
+    emptyState.hidden = true;
+    patientsBody.innerHTML = '';
+    errorMessage.textContent = message || 'Something went wrong talking to the API.';
+    icons();
+  }
+
+  function resetForLoad() {
+    errorState.hidden = true;
+    emptyState.hidden = true;
+    tableScroll.hidden = false;
+    searchInput.disabled = true;
+    patientsBody.innerHTML =
+      '<tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:90%"></span></td></tr>' +
+      '<tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:85%"></span></td></tr>' +
+      '<tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:92%"></span></td></tr>' +
+      '<tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:80%"></span></td></tr>';
+    document.querySelectorAll('.stat-card').forEach(function (card) {
+      card.hidden = false;
+      card.classList.add('stat-skeleton');
+      card.querySelector('.stat-number').textContent = '--';
+    });
+  }
+
+  function fetchJson(url) {
+    return fetch(url, { headers: { Accept: 'application/json' } }).then(function (res) {
+      return res.json().then(function (body) {
+        return { ok: res.ok, status: res.status, body: body };
+      });
+    });
+  }
+
+  function load() {
+    resetForLoad();
+
+    var patientsPromise = fetchJson('/patients');
+    var appointmentsPromise = fetchJson('/appointments').catch(function () { return null; });
+
+    Promise.all([patientsPromise, appointmentsPromise]).then(function (results) {
+      var patientsResult = results[0];
+      var appointmentsResult = results[1];
+
+      if (!patientsResult.ok || patientsResult.body.error) {
+        var msg = (patientsResult.body && patientsResult.body.error && patientsResult.body.error.message) ||
+          'The server returned an error loading patients.';
+        showError(msg);
+        return;
+      }
+
+      allPatients = patientsResult.body.data || [];
+
+      var appointmentsCount = null;
+      if (appointmentsResult && appointmentsResult.ok && !appointmentsResult.body.error) {
+        appointmentsCount = (appointmentsResult.body.data || []).length;
+      }
+
+      renderStats(allPatients, appointmentsCount);
+      renderTable(allPatients);
+      searchInput.disabled = false;
+      icons();
+    }).catch(function () {
+      showError('Could not reach the API. Check your connection and try again.');
+    });
+  }
+
+  searchInput.addEventListener('input', applySearch);
+  retryBtn.addEventListener('click', load);
+
+  icons();
+  load();
+})();
+</script>
+
+</body>
+</html>

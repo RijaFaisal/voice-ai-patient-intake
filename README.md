@@ -42,6 +42,9 @@ app/
     appointments.py     The /appointments endpoints
     call_transcripts.py  The /call-transcripts endpoints
     vapi.py              The Vapi end-of-call-report webhook
+    dashboard.py          Serves the /dashboard HTML page
+  static/
+    dashboard.html        Self-contained patient dashboard (inline CSS/JS, no build step)
 seed.py                 Inserts 1-2 sample patient records
 tests/
   conftest.py          Test-DB override + shared fixtures (client, patient_payload)
@@ -206,6 +209,15 @@ caller to try again shortly, without claiming success.
   books it via the appointment tool using the newly created patient's ID.
 
 The full system prompt is in [`voice/prompt.md`](voice/prompt.md).
+
+## Dashboard
+
+`GET /dashboard` serves a read-only patient dashboard as a single
+self-contained HTML page (inline CSS/JS, no build step, no auth). On load
+it fetches `GET /patients` (and `GET /appointments`, if available) from the
+same origin and renders KPI stat cards (Total Patients, Registered Today,
+With Insurance on File, Appointments Scheduled), a patients table
+searchable by name or phone, and loading/empty/error states.
 
 ## Setup
 
