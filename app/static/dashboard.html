@@ -38,6 +38,10 @@
     --neutral-pill-bg: #F0F1F3;
     --neutral-pill-text: #767C87;
 
+    --hero-dark-1: #0D3A35;
+    --hero-dark-2: #123C52;
+    --hero-height: 180px;
+
     --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 2px 8px rgba(16, 24, 40, 0.05);
     --radius-lg: 16px;
     --radius-md: 12px;
@@ -49,7 +53,17 @@
   html, body {
     margin: 0;
     padding: 0;
-    background: var(--bg);
+    min-height: 100%;
+    background-color: var(--bg);
+    background-image: linear-gradient(
+      180deg,
+      var(--hero-dark-1) 0,
+      var(--hero-dark-2) var(--hero-height),
+      var(--bg) var(--hero-height),
+      var(--bg) 100%
+    );
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     color: var(--text);
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -70,18 +84,22 @@
     margin-bottom: 32px;
   }
 
+  .page-header {
+    padding-top: 8px;
+  }
+
   .page-header h1 {
     margin: 0 0 6px;
     font-size: 26px;
     font-weight: 700;
     letter-spacing: -0.02em;
-    color: var(--text);
+    color: #FFFFFF;
   }
 
   .page-header .subtitle {
     margin: 0;
     font-size: 14.5px;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.72);
   }
 
   .live-badge {
@@ -90,8 +108,8 @@
     gap: 6px;
     font-size: 12.5px;
     font-weight: 500;
-    color: var(--accent-dark);
-    background: var(--accent-soft);
+    color: #FFFFFF;
+    background: rgba(255, 255, 255, 0.14);
     padding: 6px 12px;
     border-radius: 999px;
     white-space: nowrap;
@@ -101,8 +119,8 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
+    background: #7FE3C4;
+    box-shadow: 0 0 0 3px rgba(127, 227, 196, 0.28);
   }
 
   /* Stat cards */
@@ -295,6 +313,71 @@
   .pill.success { background: var(--success-bg); color: var(--success-text); }
   .pill.neutral { background: var(--neutral-pill-bg); color: var(--neutral-pill-text); }
 
+  /* Transcript list */
+  .transcript-list { padding: 6px 0; }
+
+  .transcript-item {
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .transcript-item:last-child { border-bottom: none; }
+
+  .transcript-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+
+  .transcript-date {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .transcript-preview {
+    margin: 0 0 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  .transcript-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent-dark);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .transcript-toggle:hover { color: var(--accent); }
+  .transcript-toggle svg { width: 14px; height: 14px; transition: transform 0.15s ease; }
+  .transcript-toggle[data-expanded="true"] svg { transform: rotate(180deg); }
+
+  .transcript-full {
+    margin-top: 10px;
+    padding: 14px 16px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  .transcript-skeleton-item { padding: 16px 22px; border-bottom: 1px solid var(--border); }
+  .transcript-skeleton-item:last-child { border-bottom: none; }
+
   /* Skeleton rows */
   .skeleton-bar {
     display: inline-block;
@@ -362,6 +445,7 @@
   [hidden] { display: none !important; }
 
   @media (max-width: 640px) {
+    :root { --hero-height: 200px; }
     .page { padding: 24px 16px 48px; }
     .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
     .page-header h1 { font-size: 22px; }
@@ -498,6 +582,32 @@
       <button class="retry-btn" id="appointmentsRetryBtn">Try again</button>
     </div>
   </section>
+
+  <section class="card">
+    <div class="table-card-header">
+      <h2>Call Transcripts</h2>
+    </div>
+
+    <div id="transcriptsList" class="transcript-list">
+      <!-- skeleton items shown while loading -->
+      <div class="transcript-skeleton-item"><span class="skeleton-bar" style="display:block;width:35%;margin-bottom:8px;"></span><span class="skeleton-bar" style="display:block;width:92%;"></span></div>
+      <div class="transcript-skeleton-item"><span class="skeleton-bar" style="display:block;width:30%;margin-bottom:8px;"></span><span class="skeleton-bar" style="display:block;width:85%;"></span></div>
+      <div class="transcript-skeleton-item"><span class="skeleton-bar" style="display:block;width:40%;margin-bottom:8px;"></span><span class="skeleton-bar" style="display:block;width:88%;"></span></div>
+    </div>
+
+    <div id="transcriptsEmptyState" class="state-panel" hidden>
+      <div class="state-icon"><i data-lucide="file-text"></i></div>
+      <h3>No call transcripts yet</h3>
+      <p>Completed calls will show up here automatically.</p>
+    </div>
+
+    <div id="transcriptsErrorState" class="state-panel is-error" hidden>
+      <div class="state-icon"><i data-lucide="alert-triangle"></i></div>
+      <h3>Couldn't load call transcripts</h3>
+      <p id="transcriptsErrorMessage">Something went wrong talking to the API.</p>
+      <button class="retry-btn" id="transcriptsRetryBtn">Try again</button>
+    </div>
+  </section>
 </div>
 
 <script>
@@ -517,8 +627,15 @@
   var appointmentsErrorMessage = document.getElementById('appointmentsErrorMessage');
   var appointmentsRetryBtn = document.getElementById('appointmentsRetryBtn');
 
+  var transcriptsList = document.getElementById('transcriptsList');
+  var transcriptsEmptyState = document.getElementById('transcriptsEmptyState');
+  var transcriptsErrorState = document.getElementById('transcriptsErrorState');
+  var transcriptsErrorMessage = document.getElementById('transcriptsErrorMessage');
+  var transcriptsRetryBtn = document.getElementById('transcriptsRetryBtn');
+
   var allPatients = [];
   var allAppointments = [];
+  var allTranscripts = [];
   var patientsById = {};
 
   function icons() {
@@ -698,6 +815,82 @@
       '<tr class="skeleton-row"><td colspan="4"><span class="skeleton-bar" style="width:92%"></span></td></tr>';
   }
 
+  function truncate(str, len) {
+    str = str || '';
+    if (str.length <= len) return str;
+    return str.slice(0, len).trim() + '…';
+  }
+
+  function transcriptPatientBadge(t) {
+    if (t.patient_id) {
+      return '<span class="pill success"><i data-lucide="user-check"></i>' + escapeHtml(patientNameFor(t.patient_id)) + '</span>';
+    }
+    if (t.phone_number) {
+      return '<span class="pill neutral"><i data-lucide="phone"></i>' + escapeHtml(formatPhone(t.phone_number)) + '</span>';
+    }
+    return '<span class="pill neutral"><i data-lucide="help-circle"></i>Unmatched</span>';
+  }
+
+  function transcriptItemHtml(t, index) {
+    var preview = t.summary && t.summary.trim() ? t.summary.trim() : truncate(t.transcript, 160);
+    return (
+      '<div class="transcript-item">' +
+        '<div class="transcript-item-header">' +
+          transcriptPatientBadge(t) +
+          '<span class="transcript-date">' + formatAppointmentDateTime(t.created_at) + '</span>' +
+        '</div>' +
+        '<p class="transcript-preview">' + escapeHtml(preview) + '</p>' +
+        '<button class="transcript-toggle" type="button" data-target="transcript-full-' + index + '" data-expanded="false">' +
+          '<span class="toggle-label">View full transcript</span><i data-lucide="chevron-down"></i>' +
+        '</button>' +
+        '<div class="transcript-full" id="transcript-full-' + index + '" hidden>' + escapeHtml(t.transcript || '') + '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderTranscriptsList(transcripts) {
+    if (transcripts.length === 0) {
+      transcriptsList.innerHTML = '';
+      transcriptsList.hidden = true;
+      transcriptsEmptyState.hidden = false;
+      return;
+    }
+    transcriptsEmptyState.hidden = true;
+    transcriptsList.hidden = false;
+    transcriptsList.innerHTML = transcripts.map(transcriptItemHtml).join('');
+    icons();
+  }
+
+  function showTranscriptsError(message) {
+    transcriptsErrorState.hidden = false;
+    transcriptsEmptyState.hidden = true;
+    transcriptsList.hidden = true;
+    transcriptsList.innerHTML = '';
+    transcriptsErrorMessage.textContent = message || 'Something went wrong talking to the API.';
+    icons();
+  }
+
+  function resetTranscriptsForLoad() {
+    transcriptsErrorState.hidden = true;
+    transcriptsEmptyState.hidden = true;
+    transcriptsList.hidden = false;
+    transcriptsList.innerHTML =
+      '<div class="transcript-skeleton-item"><span class="skeleton-bar" style="display:block;width:35%;margin-bottom:8px;"></span><span class="skeleton-bar" style="display:block;width:92%;"></span></div>' +
+      '<div class="transcript-skeleton-item"><span class="skeleton-bar" style="display:block;width:30%;margin-bottom:8px;"></span><span class="skeleton-bar" style="display:block;width:85%;"></span></div>' +
+      '<div class="transcript-skeleton-item"><span class="skeleton-bar" style="display:block;width:40%;margin-bottom:8px;"></span><span class="skeleton-bar" style="display:block;width:88%;"></span></div>';
+  }
+
+  transcriptsList.addEventListener('click', function (e) {
+    var btn = e.target.closest('.transcript-toggle');
+    if (!btn) return;
+    var target = document.getElementById(btn.getAttribute('data-target'));
+    if (!target) return;
+    var expanded = btn.getAttribute('data-expanded') === 'true';
+    target.hidden = expanded;
+    btn.setAttribute('data-expanded', expanded ? 'false' : 'true');
+    btn.querySelector('.toggle-label').textContent = expanded ? 'View full transcript' : 'Hide full transcript';
+  });
+
   function applySearch() {
     var q = searchInput.value.trim().toLowerCase();
     var qDigits = digitsOnly(searchInput.value);
@@ -756,22 +949,27 @@
   function load() {
     resetForLoad();
     resetAppointmentsForLoad();
+    resetTranscriptsForLoad();
 
     var patientsPromise = fetchJson('/patients');
     var appointmentsPromise = fetchJson('/appointments');
+    var transcriptsPromise = fetchJson('/call-transcripts');
 
-    Promise.all([patientsPromise, appointmentsPromise]).then(function (results) {
+    Promise.all([patientsPromise, appointmentsPromise, transcriptsPromise]).then(function (results) {
       var patientsResult = results[0];
       var appointmentsResult = results[1];
+      var transcriptsResult = results[2];
 
       var patientsOk = patientsResult.ok && !patientsResult.body.error;
       var appointmentsOk = appointmentsResult.ok && !appointmentsResult.body.error;
+      var transcriptsOk = transcriptsResult.ok && !transcriptsResult.body.error;
 
       if (!patientsOk) {
         var msg = (patientsResult.body && patientsResult.body.error && patientsResult.body.error.message) ||
           'The server returned an error loading patients.';
         showError(msg);
         showAppointmentsError('Patients failed to load, so appointments can\'t be matched to a patient name.');
+        showTranscriptsError('Patients failed to load, so call transcripts can\'t be matched to a patient name.');
         return;
       }
 
@@ -791,16 +989,27 @@
         showAppointmentsError(aMsg);
       }
 
+      if (transcriptsOk) {
+        allTranscripts = transcriptsResult.body.data || [];
+        renderTranscriptsList(allTranscripts);
+      } else {
+        var tMsg = (transcriptsResult.body && transcriptsResult.body.error && transcriptsResult.body.error.message) ||
+          'The server returned an error loading call transcripts.';
+        showTranscriptsError(tMsg);
+      }
+
       icons();
     }).catch(function () {
       showError('Could not reach the API. Check your connection and try again.');
       showAppointmentsError('Could not reach the API. Check your connection and try again.');
+      showTranscriptsError('Could not reach the API. Check your connection and try again.');
     });
   }
 
   searchInput.addEventListener('input', applySearch);
   retryBtn.addEventListener('click', load);
   appointmentsRetryBtn.addEventListener('click', load);
+  transcriptsRetryBtn.addEventListener('click', load);
 
   icons();
   load();
