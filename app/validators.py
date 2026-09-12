@@ -14,6 +14,13 @@ NAME_RE = re.compile(r"^[A-Za-zÀ-ſ](?:[A-Za-zÀ-ſ'\-. ]*[A-Za-zÀ-ſ.])?$")
 # | +1 123 456 7890 | 1 123-456-7890 -- always normalized to 10 digits.
 PHONE_RE = re.compile(r"^\+?1?[\s.\-]?\(?(\d{3})\)?[\s.\-]?(\d{3})[\s.\-]?(\d{4})$")
 
+# Looser than PHONE_RE: matches a run of digits (with spaces/dots/dashes/
+# parens as separators, no letters) anywhere inside free-form text, for
+# scanning a call transcript rather than validating a standalone field.
+# Deliberately permissive about grouping since transcription can render a
+# spoken number unevenly (e.g. "415. 55. 5. 777. 8" for 415-555-7778).
+TRANSCRIPT_PHONE_CHUNK_RE = re.compile(r"\d[\d\s().\-]*\d")
+
 ZIP_RE = re.compile(r"^\d{5}(-\d{4})?$")
 
 # Primary format per spec: MM/DD/YYYY (e.g. 04/12/1988).
@@ -59,6 +66,24 @@ def validate_phone(value: str, field_name: str = "Phone number") -> str:
             f"(e.g. 415-555-0132 or (415) 555-0132)."
         )
     return "".join(match.groups())
+
+
+def extract_phone_candidates(text: str) -> list:
+    """
+    Scan free-form text (e.g. a call transcript) for substrings that look
+    like a US phone number and return each as a normalized 10-digit string,
+    in the order they appear. Used as a fallback when no reliable caller ID
+    is available (e.g. a Vapi web call), so it can't rely on the strict,
+    anchored format validate_phone() expects.
+    """
+    candidates = []
+    for match in TRANSCRIPT_PHONE_CHUNK_RE.finditer(text or ""):
+        digits = re.sub(r"\D", "", match.group())
+        if len(digits) == 11 and digits.startswith("1"):
+            digits = digits[1:]
+        if len(digits) == 10:
+            candidates.append(digits)
+    return candidates
 
 
 def validate_state(value: str) -> str:

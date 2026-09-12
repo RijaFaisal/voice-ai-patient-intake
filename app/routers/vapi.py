@@ -50,7 +50,28 @@ async def vapi_webhook(request: Request, db: Session = Depends(get_db)):
             # patient matching rather than failing the whole webhook call.
             normalized_phone = str(phone_number).strip() or None
 
-    logger.info("Received Vapi end-of-call-report (phone_number=%s)", normalized_phone)
+    # Caller ID is null for Vapi web calls, and may simply be wrong/unmatched
+    # otherwise. Fall back to scanning the transcript text itself for a
+    # phone number the caller stated out loud, and use that to find/link the
+    # patient instead.
+    patient = crud.get_patient_by_phone(db, normalized_phone) if normalized_phone else None
+    if patient is None:
+        candidates = validators.extract_phone_candidates(str(transcript))
+        for candidate in candidates:
+            candidate_patient = crud.get_patient_by_phone(db, candidate)
+            if candidate_patient is not None:
+                normalized_phone = candidate
+                patient = candidate_patient
+                break
+        else:
+            if candidates and not normalized_phone:
+                normalized_phone = candidates[0]
+
+    logger.info(
+        "Received Vapi end-of-call-report (phone_number=%s, patient_id=%s)",
+        normalized_phone,
+        patient.patient_id if patient else None,
+    )
 
     record = crud.record_call_transcript(
         db,

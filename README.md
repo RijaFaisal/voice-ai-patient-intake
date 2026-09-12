@@ -6,8 +6,7 @@ REST API for creating, listing, retrieving, partially updating, and
 soft-deleting patient demographic records, plus scheduling and listing
 appointments for those patients, with server-side validation on all
 supplied fields. The deployed instance runs on Railway against a
-PostgreSQL database; the same code runs locally against SQLite with zero
-configuration.
+PostgreSQL database.
 
 ## Live demo
 
@@ -375,12 +374,20 @@ other event type without storing anything.
 For an end-of-call report, it extracts the transcript (`message.transcript`
 or `message.artifact.transcript`), the summary (`message.summary` or
 `message.analysis.summary`), and the caller's number
-(`message.customer.number` or `message.call.customer.number`), then stores
-them via the same lookup-and-link logic as `POST /call-transcripts`. →
-`200` with the created record. `400` if no transcript is present in the
-report. A phone number that doesn't fit the US phone format (e.g. a
-non-US E.164 number) is stored as-is on the record without patient
-matching, rather than failing the whole webhook call.
+(`message.customer.number` or `message.call.customer.number`). If that
+caller-ID number is present and matches an active patient, it's used
+directly. Vapi web calls (and any call where the number is absent or
+doesn't match) fall back to scanning the transcript text itself for a
+US phone number the caller stated out loud — handling common
+spoken/transcribed groupings like `650-555-4421`, `650 555 4421`, or an
+unevenly-punctuated transcription artifact like `415. 55. 5. 777. 8` —
+normalizing it to 10 digits and using that instead. → `200` with the
+created record, `patient_id` and `phone_number` set whenever either
+lookup succeeds, both `null` if no phone number can be found or matched.
+`400` if no transcript is present in the report. A caller-ID number that
+doesn't fit the US phone format (e.g. a non-US E.164 number) is kept
+as-is only if the transcript scan also finds nothing, rather than
+discarding it.
 
 ## Known limitations
 
