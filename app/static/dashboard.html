@@ -261,7 +261,7 @@
   table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 720px;
+    min-width: 820px;
   }
 
   table.appointments-table {
@@ -313,11 +313,104 @@
   .pill.success { background: var(--success-bg); color: var(--success-text); }
   .pill.neutral { background: var(--neutral-pill-bg); color: var(--neutral-pill-text); }
 
-  /* Transcript list */
-  .transcript-list { padding: 6px 0; }
+  /* Transcripts column + modal */
+  .transcript-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent-dark);
+    background: var(--accent-soft);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .transcript-link:hover { filter: brightness(0.96); }
+  .transcript-link svg { width: 13px; height: 13px; }
+
+  .transcript-none {
+    color: var(--text-faint);
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 21, 24, 0.5);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .modal-overlay.is-open { opacity: 1; }
+
+  .modal-card {
+    background: var(--card);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 64px rgba(16, 24, 40, 0.28);
+    width: 100%;
+    max-width: 640px;
+    max-height: min(680px, 84vh);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(8px) scale(0.98);
+    transition: transform 0.15s ease;
+  }
+  .modal-overlay.is-open .modal-card { transform: translateY(0) scale(1); }
+
+  .modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-header h3 {
+    margin: 0 0 3px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .modal-subtitle {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .modal-close {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: none;
+    background: var(--neutral-pill-bg);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .modal-close:hover { background: var(--border); color: var(--text); }
+  .modal-close svg { width: 16px; height: 16px; }
+
+  .modal-body {
+    overflow-y: auto;
+    padding: 6px 0;
+  }
 
   .transcript-item {
-    padding: 16px 22px;
+    padding: 16px 24px;
     border-bottom: 1px solid var(--border);
   }
   .transcript-item:last-child { border-bottom: none; }
@@ -332,10 +425,15 @@
   }
 
   .transcript-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font-size: 12.5px;
+    font-weight: 500;
     color: var(--text-muted);
     white-space: nowrap;
   }
+  .transcript-date svg { width: 13px; height: 13px; }
 
   .transcript-preview {
     margin: 0 0 8px;
@@ -374,9 +472,6 @@
     max-height: 360px;
     overflow-y: auto;
   }
-
-  .transcript-skeleton-item { padding: 16px 22px; border-bottom: 1px solid var(--border); }
-  .transcript-skeleton-item:last-child { border-bottom: none; }
 
   /* Skeleton rows */
   .skeleton-bar {
@@ -519,14 +614,15 @@
             <th>City / State</th>
             <th>Registered</th>
             <th>Insurance</th>
+            <th>Transcripts</th>
           </tr>
         </thead>
         <tbody id="patientsBody">
           <!-- skeleton rows shown while loading -->
-          <tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:90%"></span></td></tr>
-          <tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:85%"></span></td></tr>
-          <tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:92%"></span></td></tr>
-          <tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:80%"></span></td></tr>
+          <tr class="skeleton-row"><td colspan="8"><span class="skeleton-bar" style="width:90%"></span></td></tr>
+          <tr class="skeleton-row"><td colspan="8"><span class="skeleton-bar" style="width:85%"></span></td></tr>
+          <tr class="skeleton-row"><td colspan="8"><span class="skeleton-bar" style="width:92%"></span></td></tr>
+          <tr class="skeleton-row"><td colspan="8"><span class="skeleton-bar" style="width:80%"></span></td></tr>
         </tbody>
       </table>
     </div>
@@ -582,32 +678,21 @@
       <button class="retry-btn" id="appointmentsRetryBtn">Try again</button>
     </div>
   </section>
+</div>
 
-  <section class="card">
-    <div class="table-card-header">
-      <h2>Call Transcripts</h2>
+<div class="modal-overlay" id="transcriptModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="transcriptModalTitle">
+    <div class="modal-header">
+      <div>
+        <h3 id="transcriptModalTitle">Call transcripts</h3>
+        <p id="transcriptModalSubtitle" class="modal-subtitle"></p>
+      </div>
+      <button class="modal-close" id="transcriptModalClose" type="button" aria-label="Close">
+        <i data-lucide="x"></i>
+      </button>
     </div>
-
-    <div id="transcriptsList" class="transcript-list">
-      <!-- skeleton items shown while loading -->
-      <div class="transcript-skeleton-item"><span class="skeleton-bar" style="display:block;width:35%;margin-bottom:8px;"></span><span class="skeleton-bar" style="display:block;width:92%;"></span></div>
-      <div class="transcript-skeleton-item"><span class="skeleton-bar" style="display:block;width:30%;margin-bottom:8px;"></span><span class="skeleton-bar" style="display:block;width:85%;"></span></div>
-      <div class="transcript-skeleton-item"><span class="skeleton-bar" style="display:block;width:40%;margin-bottom:8px;"></span><span class="skeleton-bar" style="display:block;width:88%;"></span></div>
-    </div>
-
-    <div id="transcriptsEmptyState" class="state-panel" hidden>
-      <div class="state-icon"><i data-lucide="file-text"></i></div>
-      <h3>No call transcripts yet</h3>
-      <p>Completed calls will show up here automatically.</p>
-    </div>
-
-    <div id="transcriptsErrorState" class="state-panel is-error" hidden>
-      <div class="state-icon"><i data-lucide="alert-triangle"></i></div>
-      <h3>Couldn't load call transcripts</h3>
-      <p id="transcriptsErrorMessage">Something went wrong talking to the API.</p>
-      <button class="retry-btn" id="transcriptsRetryBtn">Try again</button>
-    </div>
-  </section>
+    <div class="modal-body" id="transcriptModalBody"></div>
+  </div>
 </div>
 
 <script>
@@ -627,16 +712,17 @@
   var appointmentsErrorMessage = document.getElementById('appointmentsErrorMessage');
   var appointmentsRetryBtn = document.getElementById('appointmentsRetryBtn');
 
-  var transcriptsList = document.getElementById('transcriptsList');
-  var transcriptsEmptyState = document.getElementById('transcriptsEmptyState');
-  var transcriptsErrorState = document.getElementById('transcriptsErrorState');
-  var transcriptsErrorMessage = document.getElementById('transcriptsErrorMessage');
-  var transcriptsRetryBtn = document.getElementById('transcriptsRetryBtn');
+  var transcriptModal = document.getElementById('transcriptModal');
+  var transcriptModalTitle = document.getElementById('transcriptModalTitle');
+  var transcriptModalSubtitle = document.getElementById('transcriptModalSubtitle');
+  var transcriptModalBody = document.getElementById('transcriptModalBody');
+  var transcriptModalClose = document.getElementById('transcriptModalClose');
 
   var allPatients = [];
   var allAppointments = [];
   var allTranscripts = [];
   var patientsById = {};
+  var transcriptsByPatient = {};
 
   function icons() {
     if (window.lucide) window.lucide.createIcons();
@@ -693,6 +779,14 @@
     return ((p.first_name || '') + ' ' + (p.last_name || '')).trim() || 'Unknown patient';
   }
 
+  function indexTranscripts(transcripts) {
+    transcriptsByPatient = {};
+    transcripts.forEach(function (t) {
+      if (!t.patient_id) return;
+      (transcriptsByPatient[t.patient_id] = transcriptsByPatient[t.patient_id] || []).push(t);
+    });
+  }
+
   function isToday(isoDateTime) {
     if (!isoDateTime) return false;
     var d = new Date(isoDateTime);
@@ -746,6 +840,13 @@
       ? '<span class="pill success"><i data-lucide="check-circle-2"></i>' + escapeHtml(p.insurance_provider) + '</span>'
       : '<span class="pill neutral"><i data-lucide="circle-dashed"></i>None on file</span>';
 
+    var patientTranscripts = transcriptsByPatient[p.patient_id] || [];
+    var transcriptsCell = patientTranscripts.length > 0
+      ? '<button class="transcript-link" type="button" data-patient-id="' + escapeHtml(p.patient_id) + '">' +
+          '<i data-lucide="file-text"></i>View (' + patientTranscripts.length + ')' +
+        '</button>'
+      : '<span class="transcript-none">—</span>';
+
     return (
       '<tr data-search="' + escapeHtml((name + ' ' + (p.phone_number || '')).toLowerCase()) + '">' +
         '<td><div class="patient-name">' + escapeHtml(name) + '</div></td>' +
@@ -755,6 +856,7 @@
         '<td>' + escapeHtml(p.city || '—') + ', ' + escapeHtml(p.state || '—') + '</td>' +
         '<td>' + formatRegistered(p.created_at) + '</td>' +
         '<td>' + pill + '</td>' +
+        '<td>' + transcriptsCell + '</td>' +
       '</tr>'
     );
   }
@@ -821,66 +923,53 @@
     return str.slice(0, len).trim() + '…';
   }
 
-  function transcriptPatientBadge(t) {
-    if (t.patient_id) {
-      return '<span class="pill success"><i data-lucide="user-check"></i>' + escapeHtml(patientNameFor(t.patient_id)) + '</span>';
-    }
-    if (t.phone_number) {
-      return '<span class="pill neutral"><i data-lucide="phone"></i>' + escapeHtml(formatPhone(t.phone_number)) + '</span>';
-    }
-    return '<span class="pill neutral"><i data-lucide="help-circle"></i>Unmatched</span>';
-  }
-
   function transcriptItemHtml(t, index) {
-    var preview = t.summary && t.summary.trim() ? t.summary.trim() : truncate(t.transcript, 160);
+    var preview = t.summary && t.summary.trim() ? t.summary.trim() : truncate(t.transcript, 200);
     return (
       '<div class="transcript-item">' +
         '<div class="transcript-item-header">' +
-          transcriptPatientBadge(t) +
-          '<span class="transcript-date">' + formatAppointmentDateTime(t.created_at) + '</span>' +
+          '<span class="transcript-date"><i data-lucide="phone-call"></i>' + formatAppointmentDateTime(t.created_at) + '</span>' +
         '</div>' +
         '<p class="transcript-preview">' + escapeHtml(preview) + '</p>' +
-        '<button class="transcript-toggle" type="button" data-target="transcript-full-' + index + '" data-expanded="false">' +
+        '<button class="transcript-toggle" type="button" data-target="modalTranscriptFull-' + index + '" data-expanded="false">' +
           '<span class="toggle-label">View full transcript</span><i data-lucide="chevron-down"></i>' +
         '</button>' +
-        '<div class="transcript-full" id="transcript-full-' + index + '" hidden>' + escapeHtml(t.transcript || '') + '</div>' +
+        '<div class="transcript-full" id="modalTranscriptFull-' + index + '" hidden>' + escapeHtml(t.transcript || '') + '</div>' +
       '</div>'
     );
   }
 
-  function renderTranscriptsList(transcripts) {
-    if (transcripts.length === 0) {
-      transcriptsList.innerHTML = '';
-      transcriptsList.hidden = true;
-      transcriptsEmptyState.hidden = false;
-      return;
-    }
-    transcriptsEmptyState.hidden = true;
-    transcriptsList.hidden = false;
-    transcriptsList.innerHTML = transcripts.map(transcriptItemHtml).join('');
+  function openTranscriptModal(patientId) {
+    var patient = patientsById[patientId];
+    var transcripts = transcriptsByPatient[patientId] || [];
+
+    transcriptModalTitle.textContent = patient ? ((patient.first_name || '') + ' ' + (patient.last_name || '')).trim() : 'Call transcripts';
+    transcriptModalSubtitle.textContent = transcripts.length + (transcripts.length === 1 ? ' call transcript' : ' call transcripts');
+    transcriptModalBody.innerHTML = transcripts.map(transcriptItemHtml).join('');
+
+    transcriptModal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { transcriptModal.classList.add('is-open'); });
     icons();
+    transcriptModalClose.focus();
   }
 
-  function showTranscriptsError(message) {
-    transcriptsErrorState.hidden = false;
-    transcriptsEmptyState.hidden = true;
-    transcriptsList.hidden = true;
-    transcriptsList.innerHTML = '';
-    transcriptsErrorMessage.textContent = message || 'Something went wrong talking to the API.';
-    icons();
+  function closeTranscriptModal() {
+    transcriptModal.classList.remove('is-open');
+    document.body.style.overflow = '';
+    setTimeout(function () {
+      transcriptModal.hidden = true;
+      transcriptModalBody.innerHTML = '';
+    }, 150);
   }
 
-  function resetTranscriptsForLoad() {
-    transcriptsErrorState.hidden = true;
-    transcriptsEmptyState.hidden = true;
-    transcriptsList.hidden = false;
-    transcriptsList.innerHTML =
-      '<div class="transcript-skeleton-item"><span class="skeleton-bar" style="display:block;width:35%;margin-bottom:8px;"></span><span class="skeleton-bar" style="display:block;width:92%;"></span></div>' +
-      '<div class="transcript-skeleton-item"><span class="skeleton-bar" style="display:block;width:30%;margin-bottom:8px;"></span><span class="skeleton-bar" style="display:block;width:85%;"></span></div>' +
-      '<div class="transcript-skeleton-item"><span class="skeleton-bar" style="display:block;width:40%;margin-bottom:8px;"></span><span class="skeleton-bar" style="display:block;width:88%;"></span></div>';
-  }
+  patientsBody.addEventListener('click', function (e) {
+    var btn = e.target.closest('.transcript-link');
+    if (!btn) return;
+    openTranscriptModal(btn.getAttribute('data-patient-id'));
+  });
 
-  transcriptsList.addEventListener('click', function (e) {
+  transcriptModalBody.addEventListener('click', function (e) {
     var btn = e.target.closest('.transcript-toggle');
     if (!btn) return;
     var target = document.getElementById(btn.getAttribute('data-target'));
@@ -889,6 +978,14 @@
     target.hidden = expanded;
     btn.setAttribute('data-expanded', expanded ? 'false' : 'true');
     btn.querySelector('.toggle-label').textContent = expanded ? 'View full transcript' : 'Hide full transcript';
+  });
+
+  transcriptModalClose.addEventListener('click', closeTranscriptModal);
+  transcriptModal.addEventListener('click', function (e) {
+    if (e.target === transcriptModal) closeTranscriptModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !transcriptModal.hidden) closeTranscriptModal();
   });
 
   function applySearch() {
@@ -923,10 +1020,10 @@
     tableScroll.hidden = false;
     searchInput.disabled = true;
     patientsBody.innerHTML =
-      '<tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:90%"></span></td></tr>' +
-      '<tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:85%"></span></td></tr>' +
-      '<tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:92%"></span></td></tr>' +
-      '<tr class="skeleton-row"><td colspan="7"><span class="skeleton-bar" style="width:80%"></span></td></tr>';
+      '<tr class="skeleton-row"><td colspan="8"><span class="skeleton-bar" style="width:90%"></span></td></tr>' +
+      '<tr class="skeleton-row"><td colspan="8"><span class="skeleton-bar" style="width:85%"></span></td></tr>' +
+      '<tr class="skeleton-row"><td colspan="8"><span class="skeleton-bar" style="width:92%"></span></td></tr>' +
+      '<tr class="skeleton-row"><td colspan="8"><span class="skeleton-bar" style="width:80%"></span></td></tr>';
     document.querySelectorAll('.stat-card').forEach(function (card) {
       card.hidden = false;
       card.classList.add('stat-skeleton');
@@ -949,7 +1046,6 @@
   function load() {
     resetForLoad();
     resetAppointmentsForLoad();
-    resetTranscriptsForLoad();
 
     var patientsPromise = fetchJson('/patients');
     var appointmentsPromise = fetchJson('/appointments');
@@ -969,12 +1065,14 @@
           'The server returned an error loading patients.';
         showError(msg);
         showAppointmentsError('Patients failed to load, so appointments can\'t be matched to a patient name.');
-        showTranscriptsError('Patients failed to load, so call transcripts can\'t be matched to a patient name.');
         return;
       }
 
       allPatients = patientsResult.body.data || [];
       indexPatients(allPatients);
+
+      allTranscripts = transcriptsOk ? (transcriptsResult.body.data || []) : [];
+      indexTranscripts(allTranscripts);
 
       renderStats(allPatients, appointmentsOk ? (appointmentsResult.body.data || []).length : null);
       renderTable(allPatients);
@@ -989,27 +1087,16 @@
         showAppointmentsError(aMsg);
       }
 
-      if (transcriptsOk) {
-        allTranscripts = transcriptsResult.body.data || [];
-        renderTranscriptsList(allTranscripts);
-      } else {
-        var tMsg = (transcriptsResult.body && transcriptsResult.body.error && transcriptsResult.body.error.message) ||
-          'The server returned an error loading call transcripts.';
-        showTranscriptsError(tMsg);
-      }
-
       icons();
     }).catch(function () {
       showError('Could not reach the API. Check your connection and try again.');
       showAppointmentsError('Could not reach the API. Check your connection and try again.');
-      showTranscriptsError('Could not reach the API. Check your connection and try again.');
     });
   }
 
   searchInput.addEventListener('input', applySearch);
   retryBtn.addEventListener('click', load);
   appointmentsRetryBtn.addEventListener('click', load);
-  transcriptsRetryBtn.addEventListener('click', load);
 
   icons();
   load();
