@@ -12,6 +12,7 @@ configuration.
 ## Live demo
 
 - API base URL: https://voice-ai-patient-intake-production-e7f4.up.railway.app
+- Patient dashboard: https://voice-ai-patient-intake-production-e7f4.up.railway.app/dashboard
 - Call the voice agent: **+1 732 782 5565**
 
 ## Tech stack
