@@ -40,7 +40,6 @@
 
     --hero-dark-1: #0D3A35;
     --hero-dark-2: #123C52;
-    --hero-height: 180px;
 
     --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 2px 8px rgba(16, 24, 40, 0.05);
     --radius-lg: 16px;
@@ -54,25 +53,31 @@
     margin: 0;
     padding: 0;
     min-height: 100%;
-    background-color: var(--bg);
-    background-image: linear-gradient(
-      180deg,
-      var(--hero-dark-1) 0,
-      var(--hero-dark-2) var(--hero-height),
-      var(--bg) var(--hero-height),
-      var(--bg) 100%
-    );
-    background-repeat: no-repeat;
-    background-attachment: fixed;
+    background: var(--bg);
     color: var(--text);
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Sticky top bar: header + KPI stats stay fixed; only the cards below scroll. */
+  .hero-bar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background-image: linear-gradient(135deg, var(--hero-dark-1) 0%, var(--hero-dark-2) 100%);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+  }
+
+  .hero-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 32px 24px;
+  }
+
   .page {
     max-width: 1180px;
     margin: 0 auto;
-    padding: 40px 32px 64px;
+    padding: 24px 32px 64px;
   }
 
   /* Header */
@@ -81,11 +86,7 @@
     align-items: flex-end;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 32px;
-  }
-
-  .page-header {
-    padding-top: 8px;
+    margin-bottom: 24px;
   }
 
   .page-header h1 {
@@ -128,7 +129,6 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 18px;
-    margin-bottom: 28px;
   }
 
   .stat-card {
@@ -540,8 +540,8 @@
   [hidden] { display: none !important; }
 
   @media (max-width: 640px) {
-    :root { --hero-height: 200px; }
-    .page { padding: 24px 16px 48px; }
+    .hero-inner { padding: 24px 16px 20px; }
+    .page { padding: 20px 16px 48px; }
     .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
     .page-header h1 { font-size: 22px; }
     .table-card-header { flex-direction: column; align-items: stretch; }
@@ -554,46 +554,50 @@
 </head>
 <body>
 
+<div class="hero-bar">
+  <div class="hero-inner">
+    <header class="page-header">
+      <div>
+        <h1>Patient Intake Dashboard</h1>
+        <p class="subtitle">Registered patients, live from the database.</p>
+      </div>
+      <span class="live-badge"><span class="live-dot"></span>Live</span>
+    </header>
+
+    <section class="stats-grid" id="statsGrid" aria-label="Summary statistics">
+      <div class="stat-card stat-skeleton" data-stat="total">
+        <div class="stat-icon-chip teal"><i data-lucide="users"></i></div>
+        <div class="stat-body">
+          <div class="stat-number">--</div>
+          <div class="stat-label">Total Patients</div>
+        </div>
+      </div>
+      <div class="stat-card stat-skeleton" data-stat="today">
+        <div class="stat-icon-chip blue"><i data-lucide="calendar-plus"></i></div>
+        <div class="stat-body">
+          <div class="stat-number">--</div>
+          <div class="stat-label">Registered Today</div>
+        </div>
+      </div>
+      <div class="stat-card stat-skeleton" data-stat="insurance">
+        <div class="stat-icon-chip amber"><i data-lucide="shield-check"></i></div>
+        <div class="stat-body">
+          <div class="stat-number">--</div>
+          <div class="stat-label">With Insurance on File</div>
+        </div>
+      </div>
+      <div class="stat-card stat-skeleton" data-stat="appointments">
+        <div class="stat-icon-chip lavender"><i data-lucide="calendar-clock"></i></div>
+        <div class="stat-body">
+          <div class="stat-number">--</div>
+          <div class="stat-label">Appointments Scheduled</div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
 <div class="page">
-  <header class="page-header">
-    <div>
-      <h1>Patient Intake Dashboard</h1>
-      <p class="subtitle">Registered patients, live from the database.</p>
-    </div>
-    <span class="live-badge"><span class="live-dot"></span>Live</span>
-  </header>
-
-  <section class="stats-grid" id="statsGrid" aria-label="Summary statistics">
-    <div class="stat-card stat-skeleton" data-stat="total">
-      <div class="stat-icon-chip teal"><i data-lucide="users"></i></div>
-      <div class="stat-body">
-        <div class="stat-number">--</div>
-        <div class="stat-label">Total Patients</div>
-      </div>
-    </div>
-    <div class="stat-card stat-skeleton" data-stat="today">
-      <div class="stat-icon-chip blue"><i data-lucide="calendar-plus"></i></div>
-      <div class="stat-body">
-        <div class="stat-number">--</div>
-        <div class="stat-label">Registered Today</div>
-      </div>
-    </div>
-    <div class="stat-card stat-skeleton" data-stat="insurance">
-      <div class="stat-icon-chip amber"><i data-lucide="shield-check"></i></div>
-      <div class="stat-body">
-        <div class="stat-number">--</div>
-        <div class="stat-label">With Insurance on File</div>
-      </div>
-    </div>
-    <div class="stat-card stat-skeleton" data-stat="appointments">
-      <div class="stat-icon-chip lavender"><i data-lucide="calendar-clock"></i></div>
-      <div class="stat-body">
-        <div class="stat-number">--</div>
-        <div class="stat-label">Appointments Scheduled</div>
-      </div>
-    </div>
-  </section>
-
   <section class="card">
     <div class="table-card-header">
       <h2>Patients</h2>
