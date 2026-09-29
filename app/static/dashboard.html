@@ -57,6 +57,9 @@
     color: var(--text);
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
+    /* Prevents the trackpad/touch rubber-band bounce past the top of the page,
+       which showed as blank space above the sticky hero bar while scrolling. */
+    overscroll-behavior-y: none;
   }
 
   /* Sticky top bar: header + KPI stats stay fixed; only the cards below scroll. */
@@ -121,6 +124,12 @@
     gap: 16px;
     cursor: default;
     user-select: none;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .stat-card:hover {
+    box-shadow: 0 4px 16px rgba(16, 24, 40, 0.08), 0 2px 6px rgba(16, 24, 40, 0.05);
+    transform: translateY(-1px);
   }
 
   .stat-icon-chip {
@@ -156,6 +165,26 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .stat-top-row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    justify-content: space-between;
+  }
+
+  .stat-delta {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .stat-trend {
+    display: block;
+    margin-top: 6px;
+    overflow: visible;
   }
 
   .stat-skeleton .stat-number,
@@ -274,6 +303,55 @@
     margin-top: 24px;
   }
 
+  .pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 22px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .pagination-summary {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  }
+
+  .page-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-1px); }
+  .page-btn:active:not(:disabled) { transform: translateY(0); }
+  .page-btn:disabled { opacity: 0.4; cursor: default; }
+  .page-btn svg { width: 14px; height: 14px; }
+
+  .page-indicator {
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 0 4px;
+    white-space: nowrap;
+  }
+
   .table-scroll {
     overflow-x: auto;
   }
@@ -326,12 +404,37 @@
 
   tbody tr:last-child td { border-bottom: none; }
   tbody tr:nth-child(even) { background: #FBFBFC; }
+  tbody tr { transition: background-color 0.12s ease; }
   tbody tr:hover { background: var(--accent-soft); }
 
-  .patient-name { font-weight: 600; }
+  .patient-name { font-weight: 600; display: inline-flex; align-items: center; gap: 10px; }
   .patient-name .row-sub { font-weight: 400; color: var(--text-muted); font-size: 12.5px; margin-top: 1px; }
 
+  /* Avatar-initial chip: a small identity anchor next to a patient's name.
+     Themed cyclically from the same accent hues as the stat-icon chips. */
+  .avatar-chip {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .avatar-chip.sm { width: 24px; height: 24px; font-size: 10px; }
+  .avatar-chip.lg { width: 44px; height: 44px; font-size: 15px; }
+  .avatar-chip.teal   { background: var(--accent-soft); color: var(--accent-dark); }
+  .avatar-chip.blue   { background: var(--accent-blue-soft); color: var(--accent-blue-dark); }
+  .avatar-chip.amber  { background: var(--accent-amber-soft); color: var(--accent-amber-dark); }
+  .avatar-chip.lavender { background: var(--accent-lavender-soft); color: var(--accent-lavender-dark); }
+
   .patient-name-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
     font: inherit;
     font-weight: 600;
     color: var(--text);
@@ -341,7 +444,8 @@
     cursor: pointer;
     text-align: left;
   }
-  .patient-name-link:hover { color: var(--accent-dark); text-decoration: underline; }
+  .patient-name-link:hover { color: var(--accent-dark); }
+  .patient-name-link:hover .patient-name-text { text-decoration: underline; }
 
   .pill {
     display: inline-flex;
@@ -357,6 +461,11 @@
 
   .pill.success { background: var(--success-bg); color: var(--success-text); }
   .pill.neutral { background: var(--neutral-pill-bg); color: var(--neutral-pill-text); }
+  .pill.upcoming { background: var(--accent-blue-soft); color: var(--accent-blue-dark); }
+  .pill.today { background: var(--accent-amber-soft); color: var(--accent-amber-dark); }
+  .pill.past { background: var(--neutral-pill-bg); color: var(--neutral-pill-text); }
+
+  .appt-status-row { margin-top: 5px; }
 
   /* Transcripts column + modal */
   .transcript-link {
@@ -373,8 +482,10 @@
     border-radius: 999px;
     cursor: pointer;
     white-space: nowrap;
+    transition: filter 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
   }
-  .transcript-link:hover { filter: brightness(0.96); }
+  .transcript-link:hover { filter: brightness(0.96); transform: translateY(-1px); box-shadow: 0 2px 6px rgba(16, 24, 40, 0.08); }
+  .transcript-link:active { transform: translateY(0); box-shadow: none; }
   .transcript-link svg { width: 13px; height: 13px; }
 
   .transcript-none {
@@ -420,6 +531,13 @@
     border-bottom: 1px solid var(--border);
   }
 
+  .modal-header-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+
   .modal-header h3 {
     margin: 0 0 3px;
     font-size: 16px;
@@ -445,8 +563,9 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
   }
-  .modal-close:hover { background: var(--border); color: var(--text); }
+  .modal-close:hover { background: var(--border); color: var(--text); transform: scale(1.06); }
   .modal-close svg { width: 16px; height: 16px; }
 
   .modal-body {
@@ -618,8 +737,21 @@
     padding: 8px 16px;
     border-radius: var(--radius-sm);
     cursor: pointer;
+    transition: filter 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
   }
-  .retry-btn:hover { filter: brightness(0.96); }
+  .retry-btn:hover { filter: brightness(0.96); transform: translateY(-1px); box-shadow: 0 2px 6px rgba(16, 24, 40, 0.08); }
+  .retry-btn:active { transform: translateY(0); box-shadow: none; }
+
+  .patient-name-link:focus-visible,
+  .transcript-link:focus-visible,
+  .transcript-toggle:focus-visible,
+  .retry-btn:focus-visible,
+  .page-btn:focus-visible,
+  .modal-close:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
 
   [hidden] { display: none !important; }
 
@@ -653,29 +785,43 @@
       <div class="stat-card stat-skeleton" data-stat="total">
         <div class="stat-icon-chip teal"><i data-lucide="users"></i></div>
         <div class="stat-body">
-          <div class="stat-number">--</div>
+          <div class="stat-top-row">
+            <div class="stat-number">--</div>
+            <span class="stat-delta" data-role="delta"></span>
+          </div>
           <div class="stat-label">Total Patients</div>
+          <svg class="stat-trend" data-role="trend" width="80" height="24" viewBox="0 0 80 24" aria-hidden="true"></svg>
         </div>
       </div>
       <div class="stat-card stat-skeleton" data-stat="today">
         <div class="stat-icon-chip blue"><i data-lucide="calendar-plus"></i></div>
         <div class="stat-body">
-          <div class="stat-number">--</div>
+          <div class="stat-top-row">
+            <div class="stat-number">--</div>
+            <span class="stat-delta" data-role="delta"></span>
+          </div>
           <div class="stat-label">Registered Today</div>
         </div>
       </div>
       <div class="stat-card stat-skeleton" data-stat="insurance">
         <div class="stat-icon-chip amber"><i data-lucide="shield-check"></i></div>
         <div class="stat-body">
-          <div class="stat-number">--</div>
+          <div class="stat-top-row">
+            <div class="stat-number">--</div>
+            <span class="stat-delta" data-role="delta"></span>
+          </div>
           <div class="stat-label">With Insurance on File</div>
         </div>
       </div>
       <div class="stat-card stat-skeleton" data-stat="appointments">
         <div class="stat-icon-chip lavender"><i data-lucide="calendar-clock"></i></div>
         <div class="stat-body">
-          <div class="stat-number">--</div>
+          <div class="stat-top-row">
+            <div class="stat-number">--</div>
+            <span class="stat-delta" data-role="delta"></span>
+          </div>
           <div class="stat-label">Appointments Scheduled</div>
+          <svg class="stat-trend" data-role="trend" width="80" height="24" viewBox="0 0 80 24" aria-hidden="true"></svg>
         </div>
       </div>
     </section>
@@ -713,7 +859,7 @@
     </div>
 
     <div class="table-scroll">
-      <table>
+      <table class="patients-table">
         <thead>
           <tr>
             <th class="sortable-th" data-sort-key="name">Name<i data-lucide="chevron-up" class="sort-icon"></i></th>
@@ -736,6 +882,15 @@
       </table>
     </div>
 
+    <div class="pagination-bar" id="patientsPagination" hidden>
+      <span class="pagination-summary" id="patientsPaginationSummary"></span>
+      <div class="pagination-controls">
+        <button class="page-btn" id="patientsPrevBtn" type="button" aria-label="Previous page"><i data-lucide="chevron-left"></i></button>
+        <span class="page-indicator" id="patientsPageIndicator"></span>
+        <button class="page-btn" id="patientsNextBtn" type="button" aria-label="Next page"><i data-lucide="chevron-right"></i></button>
+      </div>
+    </div>
+
     <div id="emptyState" class="state-panel" hidden>
       <div class="state-icon"><i data-lucide="inbox"></i></div>
       <h3>No patients registered yet</h3>
@@ -753,16 +908,22 @@
   <section class="card">
     <div class="table-card-header">
       <h2>Appointments</h2>
+      <div class="table-controls">
+        <div class="search-wrap">
+          <i data-lucide="search"></i>
+          <input id="appointmentsSearchInput" type="text" placeholder="Search by patient or reason…" disabled />
+        </div>
+      </div>
     </div>
 
     <div class="table-scroll" id="appointmentsTableScroll">
       <table class="appointments-table">
         <thead>
           <tr>
-            <th>Patient</th>
-            <th>Date &amp; Time</th>
+            <th class="sortable-th" data-sort-key="patient">Patient<i data-lucide="chevron-up" class="sort-icon"></i></th>
+            <th class="sortable-th" data-sort-key="date">Date &amp; Time<i data-lucide="chevron-up" class="sort-icon"></i></th>
             <th>Reason</th>
-            <th>Created</th>
+            <th class="sortable-th" data-sort-key="created">Created<i data-lucide="chevron-up" class="sort-icon"></i></th>
           </tr>
         </thead>
         <tbody id="appointmentsBody">
@@ -772,6 +933,15 @@
           <tr class="skeleton-row"><td colspan="4"><span class="skeleton-bar" style="width:92%"></span></td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="pagination-bar" id="appointmentsPagination" hidden>
+      <span class="pagination-summary" id="appointmentsPaginationSummary"></span>
+      <div class="pagination-controls">
+        <button class="page-btn" id="appointmentsPrevBtn" type="button" aria-label="Previous page"><i data-lucide="chevron-left"></i></button>
+        <span class="page-indicator" id="appointmentsPageIndicator"></span>
+        <button class="page-btn" id="appointmentsNextBtn" type="button" aria-label="Next page"><i data-lucide="chevron-right"></i></button>
+      </div>
     </div>
 
     <div id="appointmentsEmptyState" class="state-panel" hidden>
@@ -792,9 +962,12 @@
 <div class="modal-overlay" id="patientModal" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="patientModalTitle">
     <div class="modal-header">
-      <div>
-        <h3 id="patientModalTitle">Patient</h3>
-        <p id="patientModalSubtitle" class="modal-subtitle"></p>
+      <div class="modal-header-info">
+        <span class="avatar-chip lg" id="patientModalAvatar" aria-hidden="true"></span>
+        <div>
+          <h3 id="patientModalTitle">Patient</h3>
+          <p id="patientModalSubtitle" class="modal-subtitle"></p>
+        </div>
       </div>
       <button class="modal-close" id="patientModalClose" type="button" aria-label="Close">
         <i data-lucide="x"></i>
@@ -817,6 +990,14 @@
   var tableScroll = document.querySelector('.table-scroll');
 
   var sortState = { key: null, dir: 'asc' };
+  var patientsPage = 1;
+  var PAGE_SIZE = 20;
+
+  var patientsPagination = document.getElementById('patientsPagination');
+  var patientsPaginationSummary = document.getElementById('patientsPaginationSummary');
+  var patientsPrevBtn = document.getElementById('patientsPrevBtn');
+  var patientsNextBtn = document.getElementById('patientsNextBtn');
+  var patientsPageIndicator = document.getElementById('patientsPageIndicator');
 
   var appointmentsBody = document.getElementById('appointmentsBody');
   var appointmentsTableScroll = document.getElementById('appointmentsTableScroll');
@@ -824,10 +1005,20 @@
   var appointmentsErrorState = document.getElementById('appointmentsErrorState');
   var appointmentsErrorMessage = document.getElementById('appointmentsErrorMessage');
   var appointmentsRetryBtn = document.getElementById('appointmentsRetryBtn');
+  var appointmentsSearchInput = document.getElementById('appointmentsSearchInput');
+  var appointmentsSortState = { key: null, dir: 'asc' };
+  var appointmentsPage = 1;
+
+  var appointmentsPagination = document.getElementById('appointmentsPagination');
+  var appointmentsPaginationSummary = document.getElementById('appointmentsPaginationSummary');
+  var appointmentsPrevBtn = document.getElementById('appointmentsPrevBtn');
+  var appointmentsNextBtn = document.getElementById('appointmentsNextBtn');
+  var appointmentsPageIndicator = document.getElementById('appointmentsPageIndicator');
 
   var patientModal = document.getElementById('patientModal');
   var patientModalTitle = document.getElementById('patientModalTitle');
   var patientModalSubtitle = document.getElementById('patientModalSubtitle');
+  var patientModalAvatar = document.getElementById('patientModalAvatar');
   var patientModalBody = document.getElementById('patientModalBody');
   var patientModalClose = document.getElementById('patientModalClose');
 
@@ -892,6 +1083,47 @@
     return ((p.first_name || '') + ' ' + (p.last_name || '')).trim() || 'Unknown patient';
   }
 
+  var AVATAR_THEMES = ['teal', 'blue', 'amber', 'lavender'];
+
+  // Deterministic theme + initials for a patient's avatar chip, so the same
+  // patient always renders the same color across the table, modal, etc.
+  function avatarThemeFor(patientId) {
+    var str = patientId || '';
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+    return AVATAR_THEMES[hash % AVATAR_THEMES.length];
+  }
+
+  function initialsFor(firstName, lastName) {
+    var a = (firstName || '').trim().charAt(0);
+    var b = (lastName || '').trim().charAt(0);
+    return ((a + b).toUpperCase()) || '?';
+  }
+
+  function avatarChipHtml(patientId, firstName, lastName, sizeClass) {
+    var cls = 'avatar-chip ' + avatarThemeFor(patientId) + (sizeClass ? ' ' + sizeClass : '');
+    return '<span class="' + cls + '" aria-hidden="true">' + escapeHtml(initialsFor(firstName, lastName)) + '</span>';
+  }
+
+  // Upcoming / today / past, based on the appointment's scheduled date-time vs now.
+  function appointmentStatus(isoDateTime) {
+    if (!isoDateTime) return null;
+    var d = new Date(isoDateTime);
+    if (isNaN(d.getTime())) return null;
+    var now = new Date();
+    var sameDay = d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+    if (sameDay) return 'today';
+    return d.getTime() > now.getTime() ? 'upcoming' : 'past';
+  }
+
+  function appointmentStatusPillHtml(status) {
+    if (status === 'today') return '<span class="pill today"><i data-lucide="calendar-check"></i>Today</span>';
+    if (status === 'upcoming') return '<span class="pill upcoming"><i data-lucide="clock"></i>Upcoming</span>';
+    if (status === 'past') return '<span class="pill past"><i data-lucide="check"></i>Past</span>';
+    return '';
+  }
+
   function indexTranscripts(transcripts) {
     transcriptsByPatient = {};
     transcripts.forEach(function (t) {
@@ -930,19 +1162,95 @@
     if (card) card.hidden = true;
   }
 
-  function renderStats(patients, appointmentsCount) {
+  function setDelta(key, text) {
+    var card = document.querySelector('.stat-card[data-stat="' + key + '"]');
+    if (!card) return;
+    var el = card.querySelector('[data-role="delta"]');
+    if (el) el.textContent = text || '';
+  }
+
+  // Buckets a list of ISO date-time strings into daily counts for the last `days`
+  // days (inclusive of today), oldest first — the shape a sparkline needs.
+  function dailyBuckets(isoDateTimes, days) {
+    var buckets = [];
+    var start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - (days - 1));
+    for (var i = 0; i < days; i++) {
+      var d = new Date(start);
+      d.setDate(d.getDate() + i);
+      buckets.push({ date: d, count: 0 });
+    }
+    isoDateTimes.forEach(function (iso) {
+      if (!iso) return;
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return;
+      d.setHours(0, 0, 0, 0);
+      var idx = Math.round((d - start) / 86400000);
+      if (idx >= 0 && idx < buckets.length) buckets[idx].count++;
+    });
+    return buckets;
+  }
+
+  function sumCounts(buckets) {
+    return buckets.reduce(function (sum, b) { return sum + b.count; }, 0);
+  }
+
+  function formatWeekDelta(delta) {
+    if (delta === 0) return 'No change this week';
+    return (delta > 0 ? '+' : '') + delta + ' this week';
+  }
+
+  // Renders a 14-point sparkline into `svg`: the trend line in a muted,
+  // de-emphasized tone, with the most recent segment and endpoint in `accentColor`.
+  function renderTrendSvg(svg, buckets, accentColor) {
+    if (!svg) return;
+    var w = 80, h = 24, pad = 3;
+    var max = Math.max.apply(null, buckets.map(function (b) { return b.count; }).concat([1]));
+    var stepX = (w - pad * 2) / (buckets.length - 1);
+    var points = buckets.map(function (b, i) {
+      var x = pad + i * stepX;
+      var y = h - pad - (b.count / max) * (h - pad * 2);
+      return [x, y];
+    });
+    var toPath = function (pts) {
+      return pts.map(function (p, i) {
+        return (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1);
+      }).join(' ');
+    };
+    var last = points[points.length - 1];
+    var lastTwo = points.slice(-2);
+    svg.innerHTML =
+      '<path d="' + toPath(points) + '" fill="none" stroke="var(--text-faint)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />' +
+      (lastTwo.length === 2 ? '<path d="' + toPath(lastTwo) + '" fill="none" stroke="' + accentColor + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />' : '') +
+      '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="2.5" fill="' + accentColor + '" stroke="var(--card)" stroke-width="1.5" />';
+  }
+
+  function renderStats(patients, appointments) {
     setStat('total', patients.length);
+    var patientBuckets = dailyBuckets(patients.map(function (p) { return p.created_at; }), 14);
+    renderTrendSvg(document.querySelector('.stat-card[data-stat="total"] .stat-trend'), patientBuckets, 'var(--accent-dark)');
+    var totalDelta = sumCounts(patientBuckets.slice(7)) - sumCounts(patientBuckets.slice(0, 7));
+    setDelta('total', formatWeekDelta(totalDelta));
 
     var today = patients.filter(function (p) { return isToday(p.created_at); }).length;
     setStat('today', today);
+    var yesterday = patientBuckets[patientBuckets.length - 2] ? patientBuckets[patientBuckets.length - 2].count : 0;
+    var todayDelta = today - yesterday;
+    setDelta('today', todayDelta === 0 ? 'Same as yesterday' : (todayDelta > 0 ? '+' : '') + todayDelta + ' vs yesterday');
 
     var insured = patients.filter(function (p) { return !!(p.insurance_provider && p.insurance_provider.trim()); }).length;
     setStat('insurance', insured);
+    setDelta('insurance', patients.length > 0 ? Math.round((insured / patients.length) * 100) + '% of patients' : '');
 
-    if (appointmentsCount === null) {
+    if (appointments === null) {
       hideStatCard('appointments');
     } else {
-      setStat('appointments', appointmentsCount);
+      setStat('appointments', appointments.length);
+      var apptBuckets = dailyBuckets(appointments.map(function (a) { return a.created_at; }), 14);
+      renderTrendSvg(document.querySelector('.stat-card[data-stat="appointments"] .stat-trend'), apptBuckets, 'var(--accent-lavender-dark)');
+      var apptDelta = sumCounts(apptBuckets.slice(7)) - sumCounts(apptBuckets.slice(0, 7));
+      setDelta('appointments', formatWeekDelta(apptDelta));
     }
   }
 
@@ -962,7 +1270,10 @@
 
     return (
       '<tr data-search="' + escapeHtml((name + ' ' + (p.phone_number || '')).toLowerCase()) + '">' +
-        '<td><button class="patient-name-link" type="button" data-patient-id="' + escapeHtml(p.patient_id) + '">' + escapeHtml(name) + '</button></td>' +
+        '<td><button class="patient-name-link" type="button" data-patient-id="' + escapeHtml(p.patient_id) + '">' +
+          avatarChipHtml(p.patient_id, p.first_name, p.last_name) +
+          '<span class="patient-name-text">' + escapeHtml(name) + '</span>' +
+        '</button></td>' +
         '<td>' + formatDob(p.date_of_birth) + '</td>' +
         '<td>' + escapeHtml(p.sex || '—') + '</td>' +
         '<td>' + formatPhone(p.phone_number) + '</td>' +
@@ -974,40 +1285,70 @@
     );
   }
 
-  function renderTable(patients) {
-    if (patients.length === 0) {
+  function renderTable(pageItems, totalCount) {
+    if (totalCount === 0) {
       patientsBody.innerHTML = '';
       emptyState.hidden = false;
       tableScroll.hidden = true;
+      patientsPagination.hidden = true;
       return;
     }
     emptyState.hidden = true;
     tableScroll.hidden = false;
-    patientsBody.innerHTML = patients.map(rowHtml).join('');
+    patientsBody.innerHTML = pageItems.map(rowHtml).join('');
     icons();
   }
 
+  // Clamps `page` to a valid range for `totalItems`/`pageSize`, updates the
+  // pagination bar's summary + controls, and returns the clamped page so the
+  // caller can persist it.
+  function updatePaginationBar(bar, summaryEl, indicatorEl, prevBtn, nextBtn, page, totalItems, pageSize) {
+    if (totalItems === 0) {
+      bar.hidden = true;
+      return page;
+    }
+    var totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+    if (page > totalPages) page = totalPages;
+    if (page < 1) page = 1;
+    var startIdx = (page - 1) * pageSize + 1;
+    var endIdx = Math.min(page * pageSize, totalItems);
+    bar.hidden = false;
+    summaryEl.textContent = 'Showing ' + startIdx + '–' + endIdx + ' of ' + totalItems;
+    indicatorEl.textContent = 'Page ' + page + ' of ' + totalPages;
+    prevBtn.disabled = page <= 1;
+    nextBtn.disabled = page >= totalPages;
+    return page;
+  }
+
   function appointmentRowHtml(a) {
+    var patient = patientsById[a.patient_id];
+    var status = appointmentStatus(a.appointment_date);
     return (
       '<tr>' +
-        '<td><div class="patient-name">' + escapeHtml(patientNameFor(a.patient_id)) + '</div></td>' +
-        '<td>' + formatAppointmentDateTime(a.appointment_date) + '</td>' +
+        '<td><div class="patient-name">' +
+          avatarChipHtml(a.patient_id, patient && patient.first_name, patient && patient.last_name, 'sm') +
+          '<span>' + escapeHtml(patientNameFor(a.patient_id)) + '</span>' +
+        '</div></td>' +
+        '<td>' + formatAppointmentDateTime(a.appointment_date) +
+          (status ? '<div class="appt-status-row">' + appointmentStatusPillHtml(status) + '</div>' : '') +
+        '</td>' +
         '<td>' + escapeHtml(a.reason || '—') + '</td>' +
         '<td>' + formatRegistered(a.created_at) + '</td>' +
       '</tr>'
     );
   }
 
-  function renderAppointmentsTable(appointments) {
-    if (appointments.length === 0) {
+  function renderAppointmentsTable(pageItems, totalCount) {
+    if (totalCount === 0) {
       appointmentsBody.innerHTML = '';
       appointmentsEmptyState.hidden = false;
       appointmentsTableScroll.hidden = true;
+      appointmentsPagination.hidden = true;
       return;
     }
     appointmentsEmptyState.hidden = true;
     appointmentsTableScroll.hidden = false;
-    appointmentsBody.innerHTML = appointments.map(appointmentRowHtml).join('');
+    appointmentsBody.innerHTML = pageItems.map(appointmentRowHtml).join('');
     icons();
   }
 
@@ -1024,6 +1365,8 @@
     appointmentsErrorState.hidden = true;
     appointmentsEmptyState.hidden = true;
     appointmentsTableScroll.hidden = false;
+    appointmentsPagination.hidden = true;
+    appointmentsSearchInput.disabled = true;
     appointmentsBody.innerHTML =
       '<tr class="skeleton-row"><td colspan="4"><span class="skeleton-bar" style="width:90%"></span></td></tr>' +
       '<tr class="skeleton-row"><td colspan="4"><span class="skeleton-bar" style="width:85%"></span></td></tr>' +
@@ -1110,6 +1453,8 @@
     var name = ((patient.first_name || '') + ' ' + (patient.last_name || '')).trim() || 'Patient';
     patientModalTitle.textContent = name;
     patientModalSubtitle.textContent = formatPhone(patient.phone_number) + ' · ' + (patient.city || '—') + ', ' + (patient.state || '—');
+    patientModalAvatar.textContent = initialsFor(patient.first_name, patient.last_name);
+    patientModalAvatar.className = 'avatar-chip lg ' + avatarThemeFor(patient.patient_id);
 
     patientModalBody.innerHTML =
       '<div class="modal-section"><h4 class="modal-section-title">Patient Info</h4>' + patientInfoHtml(patient) + '</div>' +
@@ -1207,7 +1552,7 @@
   }
 
   function updateSortIndicators() {
-    document.querySelectorAll('.sortable-th').forEach(function (th) {
+    document.querySelectorAll('.patients-table .sortable-th').forEach(function (th) {
       var key = th.getAttribute('data-sort-key');
       th.classList.toggle('sort-active', sortState.key === key);
       th.classList.toggle('sort-desc', sortState.key === key && sortState.dir === 'desc');
@@ -1215,10 +1560,16 @@
   }
 
   function refreshPatientsView() {
-    renderTable(sortPatients(getFilteredPatients()));
+    var list = sortPatients(getFilteredPatients());
+    patientsPage = updatePaginationBar(
+      patientsPagination, patientsPaginationSummary, patientsPageIndicator,
+      patientsPrevBtn, patientsNextBtn, patientsPage, list.length, PAGE_SIZE
+    );
+    var startIdx = (patientsPage - 1) * PAGE_SIZE;
+    renderTable(list.slice(startIdx, startIdx + PAGE_SIZE), list.length);
   }
 
-  document.querySelectorAll('.sortable-th').forEach(function (th) {
+  document.querySelectorAll('.patients-table .sortable-th').forEach(function (th) {
     th.addEventListener('click', function () {
       var key = th.getAttribute('data-sort-key');
       if (sortState.key === key) {
@@ -1228,14 +1579,94 @@
         sortState.dir = 'asc';
       }
       updateSortIndicators();
+      patientsPage = 1;
       refreshPatientsView();
     });
+  });
+
+  patientsPrevBtn.addEventListener('click', function () {
+    patientsPage -= 1;
+    refreshPatientsView();
+  });
+  patientsNextBtn.addEventListener('click', function () {
+    patientsPage += 1;
+    refreshPatientsView();
+  });
+
+  function getFilteredAppointments() {
+    var q = appointmentsSearchInput.value.trim().toLowerCase();
+    if (!q) return allAppointments.slice();
+    return allAppointments.filter(function (a) {
+      var name = patientNameFor(a.patient_id).toLowerCase();
+      var reason = (a.reason || '').toLowerCase();
+      return name.indexOf(q) !== -1 || reason.indexOf(q) !== -1;
+    });
+  }
+
+  function sortAppointments(appointments) {
+    if (!appointmentsSortState.key) return appointments;
+    var sorted = appointments.slice();
+    sorted.sort(function (a, b) {
+      var result = 0;
+      if (appointmentsSortState.key === 'patient') {
+        result = compareValues(patientNameFor(a.patient_id).toLowerCase(), patientNameFor(b.patient_id).toLowerCase());
+      } else if (appointmentsSortState.key === 'date') {
+        result = compareValues(a.appointment_date || '', b.appointment_date || '');
+      } else if (appointmentsSortState.key === 'created') {
+        result = compareValues(a.created_at || '', b.created_at || '');
+      }
+      return appointmentsSortState.dir === 'desc' ? -result : result;
+    });
+    return sorted;
+  }
+
+  function updateAppointmentsSortIndicators() {
+    document.querySelectorAll('.appointments-table .sortable-th').forEach(function (th) {
+      var key = th.getAttribute('data-sort-key');
+      th.classList.toggle('sort-active', appointmentsSortState.key === key);
+      th.classList.toggle('sort-desc', appointmentsSortState.key === key && appointmentsSortState.dir === 'desc');
+    });
+  }
+
+  function refreshAppointmentsView() {
+    var list = sortAppointments(getFilteredAppointments());
+    appointmentsPage = updatePaginationBar(
+      appointmentsPagination, appointmentsPaginationSummary, appointmentsPageIndicator,
+      appointmentsPrevBtn, appointmentsNextBtn, appointmentsPage, list.length, PAGE_SIZE
+    );
+    var startIdx = (appointmentsPage - 1) * PAGE_SIZE;
+    renderAppointmentsTable(list.slice(startIdx, startIdx + PAGE_SIZE), list.length);
+  }
+
+  document.querySelectorAll('.appointments-table .sortable-th').forEach(function (th) {
+    th.addEventListener('click', function () {
+      var key = th.getAttribute('data-sort-key');
+      if (appointmentsSortState.key === key) {
+        appointmentsSortState.dir = appointmentsSortState.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        appointmentsSortState.key = key;
+        appointmentsSortState.dir = 'asc';
+      }
+      updateAppointmentsSortIndicators();
+      appointmentsPage = 1;
+      refreshAppointmentsView();
+    });
+  });
+
+  appointmentsPrevBtn.addEventListener('click', function () {
+    appointmentsPage -= 1;
+    refreshAppointmentsView();
+  });
+  appointmentsNextBtn.addEventListener('click', function () {
+    appointmentsPage += 1;
+    refreshAppointmentsView();
   });
 
   function showError(message) {
     errorState.hidden = false;
     tableScroll.hidden = true;
     emptyState.hidden = true;
+    patientsPagination.hidden = true;
     patientsBody.innerHTML = '';
     errorMessage.textContent = message || 'Something went wrong talking to the API.';
     icons();
@@ -1245,6 +1676,7 @@
     errorState.hidden = true;
     emptyState.hidden = true;
     tableScroll.hidden = false;
+    patientsPagination.hidden = true;
     searchInput.disabled = true;
     insuranceFilter.disabled = true;
     sexFilter.disabled = true;
@@ -1257,6 +1689,10 @@
       card.hidden = false;
       card.classList.add('stat-skeleton');
       card.querySelector('.stat-number').textContent = '--';
+      var delta = card.querySelector('[data-role="delta"]');
+      if (delta) delta.textContent = '';
+      var trend = card.querySelector('[data-role="trend"]');
+      if (trend) trend.innerHTML = '';
     });
   }
 
@@ -1303,15 +1739,19 @@
       allTranscripts = transcriptsOk ? (transcriptsResult.body.data || []) : [];
       indexTranscripts(allTranscripts);
 
-      renderStats(allPatients, appointmentsOk ? (appointmentsResult.body.data || []).length : null);
+      allAppointments = appointmentsOk ? (appointmentsResult.body.data || []) : [];
+
+      renderStats(allPatients, appointmentsOk ? allAppointments : null);
+      patientsPage = 1;
       refreshPatientsView();
       searchInput.disabled = false;
       insuranceFilter.disabled = false;
       sexFilter.disabled = false;
 
       if (appointmentsOk) {
-        allAppointments = appointmentsResult.body.data || [];
-        renderAppointmentsTable(allAppointments);
+        appointmentsPage = 1;
+        refreshAppointmentsView();
+        appointmentsSearchInput.disabled = false;
       } else {
         var aMsg = (appointmentsResult.body && appointmentsResult.body.error && appointmentsResult.body.error.message) ||
           'The server returned an error loading appointments.';
@@ -1325,11 +1765,21 @@
     });
   }
 
-  searchInput.addEventListener('input', refreshPatientsView);
-  insuranceFilter.addEventListener('change', refreshPatientsView);
-  sexFilter.addEventListener('change', refreshPatientsView);
+  function onPatientsFilterChange() {
+    patientsPage = 1;
+    refreshPatientsView();
+  }
+
+  searchInput.addEventListener('input', onPatientsFilterChange);
+  insuranceFilter.addEventListener('change', onPatientsFilterChange);
+  sexFilter.addEventListener('change', onPatientsFilterChange);
   retryBtn.addEventListener('click', load);
   appointmentsRetryBtn.addEventListener('click', load);
+
+  appointmentsSearchInput.addEventListener('input', function () {
+    appointmentsPage = 1;
+    refreshAppointmentsView();
+  });
 
   icons();
   load();
